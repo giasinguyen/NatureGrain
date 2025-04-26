@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
 import Layout from "./components/layout/Layout";
-
+import './App.css'
 // Lazy loading các trang để tối ưu hiệu suất
 import { lazy, Suspense } from "react";
 import LoadingSpinner from "./components/ui/LoadingSpinner";
