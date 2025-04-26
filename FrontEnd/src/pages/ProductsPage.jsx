@@ -6,206 +6,178 @@ import ProductFilter from '../components/ui/ProductFilter';
 import Pagination from '../components/ui/Pagination';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 
-export default function ProductsPage() {
+const ProductsPage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [searchParams, setSearchParams] = useSearchParams();
-  
-  // Trích xuất các tham số từ URL
+
+  // Lấy các tham số tìm kiếm từ URL
   const currentPage = parseInt(searchParams.get('page') || '1', 10);
-  const searchQuery = searchParams.get('q') || '';
-  
-  // State cho bộ lọc
-  const [filters, setFilters] = useState({
-    category: searchParams.get('category') || '',
-    priceRange: { 
-      min: parseInt(searchParams.get('minPrice') || '0', 10), 
-      max: parseInt(searchParams.get('maxPrice') || 'Infinity', 10) 
-    },
-    sortBy: searchParams.get('sort') || 'newest'
-  });
+  const pageSize = 12;
+  const sortType = searchParams.get('sort') || 'latest';
+  const categoryParam = searchParams.get('category');
+  const categoryIds = categoryParam ? categoryParam.split(',').map(id => parseInt(id, 10)) : [];
+  const minPrice = parseInt(searchParams.get('minPrice') || '0', 10);
+  const maxPrice = parseInt(searchParams.get('maxPrice') || '1000000', 10);
 
-  // Fetch danh mục khi component được render
+  // Lấy dữ liệu sản phẩm và danh mục
   useEffect(() => {
-    categoryService.getCategories()
-      .then(response => {
-        setCategories(response.data);
-      })
-      .catch(error => {
-        console.error('Error fetching categories:', error);
-      });
-  }, []);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch categories first (we only need to do this once)
+        if (categories.length === 0) {
+          const categoriesRes = await categoryService.getCategories();
+          setCategories(categoriesRes.data);
+        }
+        
+        // Prepare filter params for product fetch
+        const params = {
+          page: currentPage - 1, // API uses 0-based indexing
+          size: pageSize,
+          sort: sortType
+        };
+        
+        // Add category filter if selected
+        if (categoryIds.length > 0) {
+          params.categoryIds = categoryIds.join(',');
+        }
+        
+        // Add price range filter
+        params.minPrice = minPrice;
+        params.maxPrice = maxPrice;
 
-  // Fetch sản phẩm khi tham số URL hoặc bộ lọc thay đổi
-  useEffect(() => {
-    setLoading(true);
-    
-    const params = {
-      page: currentPage - 1, // Backend page index thường bắt đầu từ 0
-      size: 12,
-      sort: getSortParams(filters.sortBy)
+        // Fetch products with filters
+        const productsRes = await productService.getProducts(params);
+        setProducts(productsRes.data.content || []);
+        setTotalItems(productsRes.data.totalElements || 0);
+        setTotalPages(productsRes.data.totalPages || 1);
+      } catch (error) {
+        console.error('Lỗi khi tải danh sách sản phẩm:', error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    // Thêm tham số tìm kiếm nếu có
-    if (searchQuery) {
-      params.search = searchQuery;
-    }
+    fetchData();
+  }, [searchParams, categories.length]);
 
-    // Thêm tham số danh mục nếu có
-    if (filters.category) {
-      params.categoryId = filters.category;
-    }
-
-    // Thêm tham số giá nếu không phải giá mặc định
-    if (filters.priceRange.min > 0) {
-      params.minPrice = filters.priceRange.min;
+  // Xử lý thay đổi bộ lọc
+  const handleFilterChange = (filters) => {
+    const newParams = new URLSearchParams();
+    
+    // Always reset to page 1 when filters change
+    newParams.set('page', '1');
+    
+    // Set sort type
+    if (filters.sort !== 'latest') {
+      newParams.set('sort', filters.sort);
     }
     
-    if (filters.priceRange.max < Infinity) {
-      params.maxPrice = filters.priceRange.max;
+    // Set category filter
+    if (filters.category && filters.category.length > 0) {
+      newParams.set('category', filters.category.join(','));
     }
-
-    // Gọi API để lấy sản phẩm theo các tham số
-    productService.getProducts(params)
-      .then(response => {
-        setProducts(response.data.content || response.data);
-        setTotalPages(response.data.totalPages || 1);
-        setLoading(false);
-      })
-      .catch(error => {
-        console.error('Error fetching products:', error);
-        setLoading(false);
-        setProducts([]);
-      });
-  }, [currentPage, searchQuery, filters]);
-
-  // Chuyển đổi giá trị sắp xếp thành tham số API
-  const getSortParams = (sortValue) => {
-    switch(sortValue) {
-      case 'newest':
-        return 'createdDate,desc';
-      case 'price-asc':
-        return 'price,asc';
-      case 'price-desc':
-        return 'price,desc';
-      case 'name-asc':
-        return 'name,asc';
-      case 'name-desc':
-        return 'name,desc';
-      default:
-        return 'createdDate,desc';
+    
+    // Set price range
+    if (filters.price.min > 0) {
+      newParams.set('minPrice', filters.price.min.toString());
     }
+    
+    if (filters.price.max < 1000000) {
+      newParams.set('maxPrice', filters.price.max.toString());
+    }
+    
+    setSearchParams(newParams);
   };
 
-  // Xử lý khi bộ lọc thay đổi
-  const handleFilterChange = (newFilters) => {
-    setFilters(newFilters);
-    
-    // Cập nhật URL với các tham số mới
-    const newSearchParams = new URLSearchParams();
-    
-    // Reset về trang 1 khi thay đổi bộ lọc
-    newSearchParams.set('page', '1');
-    
-    if (searchQuery) {
-      newSearchParams.set('q', searchQuery);
-    }
-    
-    if (newFilters.category) {
-      newSearchParams.set('category', newFilters.category);
-    }
-    
-    if (newFilters.priceRange.min > 0) {
-      newSearchParams.set('minPrice', newFilters.priceRange.min);
-    }
-    
-    if (newFilters.priceRange.max < Infinity) {
-      newSearchParams.set('maxPrice', newFilters.priceRange.max);
-    }
-    
-    newSearchParams.set('sort', newFilters.sortBy);
-    
-    setSearchParams(newSearchParams);
-  };
-
-  // Xử lý khi thay đổi trang
+  // Xử lý thay đổi trang
   const handlePageChange = (page) => {
-    const newSearchParams = new URLSearchParams(searchParams);
-    newSearchParams.set('page', page.toString());
-    setSearchParams(newSearchParams);
-    
-    // Cuộn lên đầu trang khi thay đổi trang
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('page', page.toString());
+    setSearchParams(newParams);
+  };
+
+  // Tạo giá trị khởi tạo cho bộ lọc từ URL params
+  const initialFilters = {
+    category: categoryIds,
+    sort: sortType,
+    price: {
+      min: minPrice,
+      max: maxPrice
+    }
   };
 
   return (
-    <div className="min-h-screen bg-secondary py-12">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-            Sản phẩm
-          </h1>
-          {searchQuery && (
-            <p className="mt-3 text-xl text-gray-500">
-              Kết quả tìm kiếm cho "{searchQuery}"
-            </p>
-          )}
+    <div className="bg-gray-50 py-8 min-h-screen">
+      <div className="container mx-auto px-4">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-800">Tất cả sản phẩm</h1>
+          <p className="text-gray-600 mt-2">Khám phá các sản phẩm organic chất lượng cao</p>
         </div>
 
-        {/* Content */}
-        <div className="lg:grid lg:grid-cols-4 lg:gap-8">
-          {/* Sidebar - Filters */}
-          <div className="lg:col-span-1">
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Filter sidebar */}
+          <div className="w-full lg:w-1/4">
             <ProductFilter 
               categories={categories}
+              priceRange={{ min: 0, max: 1000000 }}
               onFilterChange={handleFilterChange}
+              initialFilters={initialFilters}
             />
           </div>
 
           {/* Product grid */}
-          <div className="mt-6 lg:mt-0 lg:col-span-3">
+          <div className="w-full lg:w-3/4">
             {loading ? (
-              <div className="flex justify-center items-center h-96">
+              <div className="min-h-[400px] flex items-center justify-center">
                 <LoadingSpinner size="lg" />
               </div>
-            ) : products.length === 0 ? (
-              <div className="text-center py-16">
-                <p className="text-xl text-gray-500">
-                  Không tìm thấy sản phẩm nào phù hợp với tiêu chí tìm kiếm.
-                </p>
-                <button 
-                  onClick={() => handleFilterChange({
-                    category: '',
-                    priceRange: { min: 0, max: Infinity },
-                    sortBy: 'newest'
-                  })}
-                  className="mt-4 btn-outline"
-                >
-                  Xóa bộ lọc
-                </button>
-              </div>
-            ) : (
+            ) : products.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {products.map((product) => (
+                <div className="flex justify-between items-center mb-6">
+                  <p className="text-gray-600">
+                    Hiển thị {products.length} trên tổng số {totalItems} sản phẩm
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                  {products.map(product => (
                     <ProductCard key={product.id} product={product} />
                   ))}
                 </div>
 
-                {/* Pagination */}
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={handlePageChange}
-                />
+                {totalPages > 1 && (
+                  <Pagination 
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                  />
+                )}
               </>
+            ) : (
+              <div className="min-h-[400px] flex flex-col items-center justify-center bg-white rounded-lg shadow-sm p-8">
+                <img 
+                  src="/empty-result.svg" 
+                  alt="Không tìm thấy sản phẩm" 
+                  className="w-32 h-32 mb-4 opacity-50"
+                />
+                <h3 className="text-xl font-medium text-gray-700 mb-2">Không tìm thấy sản phẩm</h3>
+                <p className="text-gray-500 text-center max-w-md">
+                  Rất tiếc, chúng tôi không thể tìm thấy sản phẩm nào phù hợp với bộ lọc của bạn. 
+                  Vui lòng thử lại với các tiêu chí khác.
+                </p>
+              </div>
             )}
           </div>
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default ProductsPage;

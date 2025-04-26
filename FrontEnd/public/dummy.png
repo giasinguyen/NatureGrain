@@ -1,0 +1,22 @@
+const fs = require('fs');
+const { createCanvas } = require('canvas');
+
+const width = 150;
+const height = 50;
+
+const canvas = createCanvas(width, height);
+const context = canvas.getContext('2d');
+
+context.fillStyle = '#cccccc';
+context.fillRect(0, 0, width, height);
+
+context.font = '12px Arial';
+context.fillStyle = '#666666';
+context.textAlign = 'center';
+context.textBaseline = 'middle';
+context.fillText('Dummy Image', width / 2, height / 2);
+
+const out = fs.createWriteStream(__dirname + '/dummy.png');
+const stream = canvas.createPNGStream();
+stream.pipe(out);
+out.on('finish', () =>  console.log('The PNG file was created.'));
