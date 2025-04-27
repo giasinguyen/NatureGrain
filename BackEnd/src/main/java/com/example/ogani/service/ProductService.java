@@ -29,4 +29,7 @@ public interface ProductService {
 
     void deleteProduct(long id);
 
+    List<Product> getListTopRated();
+    List<Product> getListLatest();
+
 }

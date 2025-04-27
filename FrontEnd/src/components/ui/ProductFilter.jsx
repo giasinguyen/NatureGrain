@@ -16,15 +16,21 @@ const ProductFilter = ({
     sort: selectedFilters.sort || 'newest',
     inStock: selectedFilters.inStock || false,
     isOrganic: selectedFilters.isOrganic || false,
-    ...selectedFilters
   });
 
   // Cập nhật state khi selectedFilters thay đổi
   useEffect(() => {
-    setFilters(prevFilters => ({
-      ...prevFilters,
-      ...selectedFilters
-    }));
+    // Compare current filters with selectedFilters to prevent infinite loop
+    const needsUpdate = Object.keys(selectedFilters).some(key => 
+      selectedFilters[key] !== filters[key]
+    );
+    
+    if (needsUpdate) {
+      setFilters(prevFilters => ({
+        ...prevFilters,
+        ...selectedFilters
+      }));
+    }
   }, [selectedFilters]);
 
   // Giá trị sắp xếp

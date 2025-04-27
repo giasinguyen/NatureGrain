@@ -19,10 +19,10 @@ const HomePage = () => {
         
         // Fetch data in parallel
         const [featuredRes, latestRes, categoriesRes, blogsRes] = await Promise.all([
-          productService.getTopRatedProducts(),
-          productService.getLatestProducts(),
-          categoryService.getCategories(),
-          blogService.getLatestBlogs(),
+          productService.getTopRatedProducts(), // /api/product/top-rated
+          productService.getLatestProducts(), // /api/product/latest
+          categoryService.getListEnabled(), // /api/category/enabled
+          blogService.getLatestBlogs(), // /api/blog/latest
         ]);
         
         setFeaturedProducts(featuredRes.data);

@@ -46,6 +46,20 @@ public class ProductController {
         return ResponseEntity.ok(list);
     }
 
+    @GetMapping("/latest")
+    @Operation(summary = "Lấy ra danh sách sản phẩm mới nhất")
+    public ResponseEntity<List<Product>> getListLatest() {
+        List<Product> list = productService.getListLatest();
+        return ResponseEntity.ok(list);
+    }
+
+    @GetMapping("/top-rated")
+    @Operation(summary = "Lấy ra danh sách sản phẩm được đánh giá cao nhất")
+    public ResponseEntity<List<Product>> getListTopRated() {
+        List<Product> list = productService.getListTopRated();
+        return ResponseEntity.ok(list);
+    }
+
     @GetMapping("/price")
     @Operation(summary="Lấy ra danh sách 8 sản phẩm có giá từ thấp nhất đến cao")
     public ResponseEntity<List<Product>> getListByPrice(){

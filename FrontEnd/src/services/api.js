@@ -87,17 +87,35 @@ export const authService = {
 
 // Product Services
 export const productService = {
-  getProducts: (params) => api.get('/product', { params }),
+  // Update to match available endpoints
+  getProducts: (params) => {
+    // Check filter params and use appropriate endpoints
+    if (params && params.category) {
+      return api.get(`/product/category/${params.category}`);
+    } 
+    else if (params && params.minPrice !== undefined && params.maxPrice !== undefined) {
+      // Using range endpoint with default category id=0 if none specified
+      const categoryId = params.category || 0;
+      return api.get(`/product/range?id=${categoryId}&min=${params.minPrice}&max=${params.maxPrice}`);
+    } 
+    else {
+      // Default to getting all products
+      return api.get('/product/');
+    }
+  },
   getProduct: (id) => api.get(`/product/${id}`),
   getTopRatedProducts: () => api.get('/product/top-rated'),
   getLatestProducts: () => api.get('/product/latest'),
-  searchProducts: (query) => api.get(`/product/search?query=${query}`),
+  searchProducts: (query) => api.get(`/product/search?keyword=${query}`),
   getProductsByCategory: (categoryId) => api.get(`/product/category/${categoryId}`),
 };
 
 // Category Services
 export const categoryService = {
-  getCategories: () => api.get('/category'),
+  getCategories: () => api.get('/category/enabled'),
+  getListEnabled: () => {
+    return api.get('/category/enabled');
+  },
   getCategory: (id) => api.get(`/category/${id}`),
 };
 
@@ -105,7 +123,14 @@ export const categoryService = {
 export const blogService = {
   getBlogs: (params) => api.get('/blog', { params }),
   getBlog: (id) => api.get(`/blog/${id}`),
-  getLatestBlogs: () => api.get('/blog/latest'),
+  getLatestBlogs: () => {
+    return api.get('/blog/newest?limit=3')
+      .catch(error => {
+        console.error('Error fetching latest blogs:', error);
+        // Return empty array as fallback
+        return { data: [] };
+      });
+  },
 };
 
 // Order Services
