@@ -103,11 +103,15 @@ export const productService = {
       return api.get('/product/');
     }
   },
-  getProduct: (id) => api.get(`/product/${id}`),
+  getProduct: (id) => {
+    console.log(`Fetching product with ID: ${id}`);
+    return api.get(`/product/${id}`);
+  },
   getTopRatedProducts: () => api.get('/product/top-rated'),
   getLatestProducts: () => api.get('/product/latest'),
   searchProducts: (query) => api.get(`/product/search?keyword=${query}`),
   getProductsByCategory: (categoryId) => api.get(`/product/category/${categoryId}`),
+  findRelatedProduct: (id) => api.get(`/product/related/${id}`),
 };
 
 // Category Services

@@ -62,11 +62,11 @@ const Header = () => {
           <div className="flex items-center text-sm space-x-4">
             <span className="flex items-center">
               <PhoneIcon className="w-4 h-4 mr-2" />
-              <a href="tel:+84977123456" className="hover:underline">0977.123.456</a>
+              <a href="tel:+84977123456" className="hover:underline">034.899.6487</a>
             </span>
             <span className="flex items-center">
               <EnvelopeIcon className="w-4 h-4 mr-2" />
-              <a href="mailto:info@naturegrain.com" className="hover:underline">info@naturegrain.com</a>
+              <a href="mailto:info@naturegrain.com" className="hover:underline">giasinguyentran@gmail.com</a>
             </span>
           </div>
           <div className="flex items-center text-sm space-x-4">
@@ -88,11 +88,6 @@ const Header = () => {
           <div className="flex items-center justify-between">
             {/* Logo */}
             <Link to="/" className="flex items-center">
-              <img 
-                src="/logo.svg" 
-                alt="NatureGrain" 
-                className={`transition-all ${isScrolled ? 'h-10' : 'h-12'}`}
-              />
               <span className="ml-2 font-bold text-xl sm:text-2xl text-gray-800">
                 Nature<span className="text-green-600">Grain</span>
               </span>

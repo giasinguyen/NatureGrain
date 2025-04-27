@@ -54,7 +54,7 @@ function App() {
 
                 {/* Trang sản phẩm */}
                 <Route path="/products" element={<ProductsPage />} />
-                <Route path="/product/:id" element={<ProductDetailPage />} />
+                <Route path="/products/:id" element={<ProductDetailPage />} />
 
                 {/* Trang danh mục */}
                 <Route path="/categories" element={<CategoriesPage />} />

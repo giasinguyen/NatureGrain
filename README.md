@@ -2,7 +2,7 @@
 
 [![React](https://img.shields.io/badge/Frontend-React-blue)](https://reactjs.org/)
 [![Spring Boot](https://img.shields.io/badge/Backend-Spring%20Boot-green)](https://spring.io/projects/spring-boot)
-[![MySQL](https://img.shields.io/badge/Database-MySQL-orange)](https://www.mysql.com/)
+[![MariaDB](https://img.shields.io/badge/Database-MariaDB-orange)](https://mariadb.org/)
 
 ## 📝 Tổng quan
 
