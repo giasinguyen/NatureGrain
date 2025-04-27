@@ -19,7 +19,7 @@ const ProductsPage = () => {
   const pageSize = 12;
   const sortType = searchParams.get('sort') || 'latest';
   const categoryParam = searchParams.get('category');
-  const categoryIds = categoryParam ? categoryParam.split(',').map(id => parseInt(id, 10)) : [];
+  const categoryId = categoryParam ? parseInt(categoryParam, 10) : null;
   const minPrice = parseInt(searchParams.get('minPrice') || '0', 10);
   const maxPrice = parseInt(searchParams.get('maxPrice') || '1000000', 10);
 
@@ -32,32 +32,45 @@ const ProductsPage = () => {
         // Fetch categories first (we only need to do this once)
         if (categories.length === 0) {
           const categoriesRes = await categoryService.getCategories();
-          setCategories(categoriesRes.data);
+          setCategories(categoriesRes.data || []);
         }
         
         // Prepare filter params for product fetch
-        const params = {
-          page: currentPage - 1, // API uses 0-based indexing
-          size: pageSize,
-          sort: sortType
-        };
+        let productsRes;
         
-        // Add category filter if selected
-        if (categoryIds.length > 0) {
-          params.categoryIds = categoryIds.join(',');
+        if (categoryId) {
+          // If category filter is applied
+          productsRes = await productService.getProductsByCategory(categoryId);
+        } 
+        else if (minPrice !== 0 || maxPrice !== 1000000) {
+          // If price range filter is applied
+          productsRes = await productService.getProducts({
+            minPrice: minPrice,
+            maxPrice: maxPrice
+          });
+        } 
+        else {
+          // Default - get all products
+          productsRes = await productService.getProducts({});
         }
         
-        // Add price range filter
-        params.minPrice = minPrice;
-        params.maxPrice = maxPrice;
-
-        // Fetch products with filters
-        const productsRes = await productService.getProducts(params);
-        setProducts(productsRes.data.content || []);
-        setTotalItems(productsRes.data.totalElements || 0);
-        setTotalPages(productsRes.data.totalPages || 1);
+        // Handle the products response
+        const productData = productsRes.data || [];
+        setProducts(productData);
+        setTotalItems(productData.length);
+        
+        // Calculate total pages based on page size
+        const calculatedTotalPages = Math.ceil(productData.length / pageSize);
+        setTotalPages(calculatedTotalPages > 0 ? calculatedTotalPages : 1);
+        
+        // Handle client-side pagination
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+        const paginatedProducts = productData.slice(startIndex, endIndex);
+        setProducts(paginatedProducts);
       } catch (error) {
         console.error('Lỗi khi tải danh sách sản phẩm:', error);
+        setProducts([]);
       } finally {
         setLoading(false);
       }
@@ -74,22 +87,20 @@ const ProductsPage = () => {
     newParams.set('page', '1');
     
     // Set sort type
-    if (filters.sort !== 'latest') {
+    if (filters.sort && filters.sort !== 'newest') {
       newParams.set('sort', filters.sort);
     }
     
     // Set category filter
-    if (filters.category && filters.category.length > 0) {
-      newParams.set('category', filters.category.join(','));
+    if (filters.category) {
+      newParams.set('category', filters.category);
     }
     
     // Set price range
-    if (filters.price.min > 0) {
-      newParams.set('minPrice', filters.price.min.toString());
-    }
-    
-    if (filters.price.max < 1000000) {
-      newParams.set('maxPrice', filters.price.max.toString());
+    if (filters.priceRange && filters.priceRange.includes('-')) {
+      const [min, max] = filters.priceRange.split('-');
+      newParams.set('minPrice', min);
+      newParams.set('maxPrice', max);
     }
     
     setSearchParams(newParams);
@@ -102,14 +113,22 @@ const ProductsPage = () => {
     setSearchParams(newParams);
   };
 
+  // Định nghĩa các khoảng giá
+  const priceRanges = [
+    { value: '0-50000', label: 'Dưới 50,000₫' },
+    { value: '50000-100000', label: '50,000₫ - 100,000₫' },
+    { value: '100000-200000', label: '100,000₫ - 200,000₫' },
+    { value: '200000-500000', label: '200,000₫ - 500,000₫' },
+    { value: '500000-1000000', label: 'Trên 500,000₫' }
+  ];
+
   // Tạo giá trị khởi tạo cho bộ lọc từ URL params
-  const initialFilters = {
-    category: categoryIds,
-    sort: sortType,
-    price: {
-      min: minPrice,
-      max: maxPrice
-    }
+  const selectedFilters = {
+    category: categoryId || '',
+    priceRange: searchParams.get('minPrice') && searchParams.get('maxPrice') 
+      ? `${searchParams.get('minPrice')}-${searchParams.get('maxPrice')}`
+      : '',
+    sort: sortType
   };
 
   return (
@@ -125,9 +144,9 @@ const ProductsPage = () => {
           <div className="w-full lg:w-1/4">
             <ProductFilter 
               categories={categories}
-              priceRange={{ min: 0, max: 1000000 }}
+              priceRanges={priceRanges}
+              selectedFilters={selectedFilters}
               onFilterChange={handleFilterChange}
-              initialFilters={initialFilters}
             />
           </div>
 
@@ -135,7 +154,7 @@ const ProductsPage = () => {
           <div className="w-full lg:w-3/4">
             {loading ? (
               <div className="min-h-[400px] flex items-center justify-center">
-                <LoadingSpinner size="lg" />
+                <LoadingSpinner />
               </div>
             ) : products.length > 0 ? (
               <>
@@ -152,20 +171,17 @@ const ProductsPage = () => {
                 </div>
 
                 {totalPages > 1 && (
-                  <Pagination 
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
-                  />
+                  <div className="mt-8">
+                    <Pagination 
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={handlePageChange}
+                    />
+                  </div>
                 )}
               </>
             ) : (
               <div className="min-h-[400px] flex flex-col items-center justify-center bg-white rounded-lg shadow-sm p-8">
-                <img 
-                  src="/empty-result.svg" 
-                  alt="Không tìm thấy sản phẩm" 
-                  className="w-32 h-32 mb-4 opacity-50"
-                />
                 <h3 className="text-xl font-medium text-gray-700 mb-2">Không tìm thấy sản phẩm</h3>
                 <p className="text-gray-500 text-center max-w-md">
                   Rất tiếc, chúng tôi không thể tìm thấy sản phẩm nào phù hợp với bộ lọc của bạn. 

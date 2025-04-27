@@ -4,8 +4,6 @@
 [![Spring Boot](https://img.shields.io/badge/Backend-Spring%20Boot-green)](https://spring.io/projects/spring-boot)
 [![MySQL](https://img.shields.io/badge/Database-MySQL-orange)](https://www.mysql.com/)
 
-![NatureGrain Logo](FrontEnd/public/dummy.png)
-
 ## 📝 Tổng quan
 
 NatureGrain là dự án website thương mại điện tử chuyên về thực phẩm hữu cơ, được xây dựng với mục tiêu cung cấp trải nghiệm mua sắm trực tuyến đáng tin cậy, thuận tiện cho người dùng muốn tìm kiếm các sản phẩm thực phẩm sạch, an toàn và thân thiện với môi trường.
