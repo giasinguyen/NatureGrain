@@ -174,7 +174,10 @@ const ProductDetailPage = () => {
   
   // Try to get images from the product
   if (product.images && product.images.length > 0) {
-    productImages.push(...product.images);
+    // Map image objects to URLs using the static resource path
+    productImages.push(...product.images.map(image => 
+      `http://localhost:8080/photos/${image.name}`
+    ));
   } else {
     // Use a default image if no images are available
     productImages.push('/dummy.png');

@@ -20,12 +20,31 @@ const ProductCard = ({
     name,
     price,
     discountPrice,
-    imageUrl,
-    categoryName,
-    isOrganic = false,
-    inStock = true,
+    category,
+    quantity = 0,
     discount = 0,
   } = product;
+
+  // Image handling - get image from backend
+  const getImageUrl = () => {
+    // Access image from product.images if it exists
+    if (product.images && product.images.length > 0) {
+      // Use the image name to access from static resources
+      return `http://localhost:8080/photos/${product.images[0].name}`;
+    }
+    
+    // Fallback to check if there's a specific image property
+    if (product.imageUrl) {
+      return product.imageUrl;
+    }
+    
+    // Final fallback to dummy image
+    return '/dummy.png';
+  };
+  
+  const inStock = quantity > 0;
+  const isOrganic = category?.name?.toLowerCase().includes('organic');
+  const categoryName = category?.name;
 
   const handleAddToCart = (e) => {
     e.preventDefault();
@@ -89,7 +108,7 @@ const ProductCard = ({
       {/* Ảnh sản phẩm */}
       <Link to={`/products/${id}`} className="block relative overflow-hidden pt-[100%]">
         <img
-          src={imageUrl || '/dummy.png'}
+          src={getImageUrl()}
           alt={name}
           className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           onError={(e) => {
@@ -139,7 +158,7 @@ const ProductCard = ({
       <div className="p-4">
         {categoryName && (
           <Link 
-            to={`/categories/${categoryName.toLowerCase()}`} 
+            to={`/categories/${category.id}`} 
             className="text-xs text-green-600 hover:underline mb-1 block"
           >
             {categoryName}

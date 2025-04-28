@@ -159,29 +159,32 @@ VALUES
 (3, 1), -- janedoe has ROLE_USER
 (4, 2); -- vendoruser has ROLE_MODERATOR
 
--- Insert sample images (references to files that should exist in the photos directory)
+-- Insert sample images (using actual filenames from the photos directory)
 INSERT INTO image (name, type, size, uploaded_by)
 VALUES 
-('organic_vegetables', 'jpg', 1024000, 1),
-('organic_fruits', 'jpg', 1024000, 1),
-('healthy_grains', 'jpg', 1024000, 1),
-('fresh_dairy', 'jpg', 1024000, 1),
-('sustainable_meats', 'jpg', 1024000, 1),
-('natural_honey', 'jpg', 1024000, 1),
-('blog_organic_farming', 'jpg', 1024000, 1),
-('blog_healthy_eating', 'jpg', 1024000, 1),
-('blog_sustainability', 'jpg', 1024000, 1),
-('category_vegetables', 'jpg', 1024000, 1),
-('category_fruits', 'jpg', 1024000, 1),
-('category_grains', 'jpg', 1024000, 1),
-('category_dairy', 'jpg', 1024000, 1),
-('category_meats', 'jpg', 1024000, 1),
-('product_carrot', 'jpg', 1024000, 1),
-('product_apple', 'jpg', 1024000, 1),
-('product_quinoa', 'jpg', 1024000, 1),
-('product_milk', 'jpg', 1024000, 1),
-('product_chicken', 'jpg', 1024000, 1),
-('product_honey', 'jpg', 1024000, 1);
+('12dbc8df-a591-447c-a67f-89d3de724e48.jpg', 'image/jpeg', 1024000, 1), -- Carrots
+('19e5dcd4-62c3-409c-a7a9-634ee1b1634b.jpg', 'image/jpeg', 1024000, 1), -- Broccoli
+('1b4b0ba3-76a4-41dc-9980-05600204d560.jpg', 'image/jpeg', 1024000, 1), -- Spinach
+('1e5f1bd9-c659-443e-bb58-1b510d76f2b9.jpg', 'image/jpeg', 1024000, 1), -- Apples
+('21cedc4f-be88-419f-9d05-2ad78e582195.jpg', 'image/jpeg', 1024000, 1), -- Bananas
+('228fe279-cba7-47b2-9d4f-5fe185148103.jpg', 'image/jpeg', 1024000, 1), -- Berries Mix
+('3413fd02-e755-47c4-bd2c-e8c825861881.jpg', 'image/jpeg', 1024000, 1), -- Quinoa
+('38b7e224-2ce8-4c7d-a36a-97501269266a.jpg', 'image/jpeg', 1024000, 1), -- Brown Rice
+('42e2011b-cda5-4349-9a48-76e4bb92594d.jpg', 'image/jpeg', 1024000, 1), -- Oats
+('46b06873-1544-4d8f-a840-b63b2c181983.jpg', 'image/jpeg', 1024000, 1), -- Milk
+('4f2ceb7b-4beb-4f90-8ef6-a7a033cf43d1.jpg', 'image/jpeg', 1024000, 1), -- Yogurt
+('5642229e-3a9e-488e-b58d-ba158d974c77.jpg', 'image/jpeg', 1024000, 1), -- Cheese
+('5dca27d0-107c-4f5d-bf8d-78fe0caca4b0.jpg', 'image/jpeg', 1024000, 1), -- Chicken
+('7c637b87-4cd1-441a-9ed5-e5022d3ff041.jpg', 'image/jpeg', 1024000, 1), -- Beef
+('94a04f45-5bd0-4da6-99d3-7171f5802ace.jpg', 'image/jpeg', 1024000, 1), -- Salmon
+('9f718216-a1e5-4447-9e47-27b584256a1e.jpg', 'image/jpeg', 1024000, 1), -- Raw Honey
+('a7b69b48-9041-46af-bd7d-e321b5a50e36.jpg', 'image/jpeg', 1024000, 1), -- Maple Syrup
+('acf49066-1168-4f3c-94af-692868c08176.jpg', 'image/jpeg', 1024000, 1), -- Coconut Sugar
+('b451d0b5-267d-41fb-b469-fce5a901ee34.jpg', 'image/jpeg', 1024000, 1), -- Trail Mix
+('bcb0b47e-bbf1-4fde-b01d-4dd5dde5ea78.jpg', 'image/jpeg', 1024000, 1), -- Herbal Tea
+('b1c340e7-4f93-4dae-965e-7ebf0d0edbe5.jpg', 'image/jpeg', 1024000, 1), -- Blog - Organic Farming
+('d89789fe-2d2e-44d4-aad7-dd6577bd88fe.jpg', 'image/jpeg', 1024000, 1), -- Blog - Healthy Eating
+('fa922889-f052-4c2e-b7e0-8c83876e06c7.jpg', 'image/jpeg', 1024000, 1); -- Blog - Sustainability
 
 -- Insert categories
 INSERT INTO category (name, enable)
@@ -222,12 +225,26 @@ VALUES
 -- Link products with images
 INSERT INTO product_image (product_id, image_id)
 VALUES 
-(1, 15), -- Carrots with product_carrot image
-(4, 16), -- Apples with product_apple image
-(7, 17), -- Quinoa with product_quinoa image
-(10, 18), -- Milk with product_milk image
-(13, 19), -- Chicken with product_chicken image
-(16, 20); -- Honey with product_honey image
+(1, 1),  -- Organic Carrots
+(2, 2),  -- Organic Broccoli
+(3, 3),  -- Organic Spinach
+(4, 4),  -- Organic Apples
+(5, 5),  -- Organic Bananas
+(6, 6),  -- Organic Berries Mix
+(7, 7),  -- Organic Quinoa
+(8, 8),  -- Organic Brown Rice
+(9, 9),  -- Organic Oats
+(10, 10), -- Organic Milk
+(11, 11), -- Organic Yogurt
+(12, 12), -- Organic Cheese
+(13, 13), -- Organic Chicken
+(14, 14), -- Grass-Fed Beef
+(15, 15), -- Wild-Caught Salmon
+(16, 16), -- Raw Honey
+(17, 17), -- Maple Syrup
+(18, 18), -- Coconut Sugar
+(19, 19), -- Organic Trail Mix
+(20, 20); -- Herbal Green Tea
 
 -- Insert tags
 INSERT INTO tag (name, enable)
@@ -258,7 +275,7 @@ VALUES
 <li>Climate change mitigation</li>
 </ul>
 <p>By supporting organic farming, you\'re not just making a healthier choice for yourself but also contributing to a more sustainable future for our planet.</p>', 
-7, 1, NOW() - INTERVAL 30 DAY),
+21, 1, NOW() - INTERVAL 30 DAY),
 
 ('10 Superfoods to Include in Your Diet', 
 'Discover nutrient-dense foods that can boost your health and wellbeing.', 
@@ -277,7 +294,7 @@ VALUES
 <li><strong>Green Tea</strong>: Contains powerful antioxidants called catechins, which may have various health benefits.</li>
 </ol>
 <p>Incorporating these superfoods into your diet can help improve overall health and reduce the risk of chronic diseases. Remember, a balanced diet with a variety of whole foods is always the best approach to nutrition.</p>', 
-8, 1, NOW() - INTERVAL 15 DAY),
+22, 1, NOW() - INTERVAL 15 DAY),
 
 ('Sustainable Living: Making Eco-Friendly Food Choices', 
 'Tips for making environmentally conscious decisions when shopping for food.', 
@@ -296,7 +313,7 @@ VALUES
 <h3>6. Grow Your Own</h3>
 <p>Even in small spaces, many herbs and vegetables can be grown at home, reducing your food miles to zero.</p>
 <p>Remember, every choice makes a difference. You don\'t need to be perfect – even small changes in food habits can collectively lead to significant positive environmental impacts when adopted by many people.</p>', 
-9, 1, NOW() - INTERVAL 5 DAY);
+23, 1, NOW() - INTERVAL 5 DAY);
 
 -- Link blogs with tags
 INSERT INTO blog_tag (blog_id, tag_id)
