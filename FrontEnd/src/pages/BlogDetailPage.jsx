@@ -166,7 +166,6 @@ const BlogDetailPage = () => {
         setBlog(mockBlog);
         setRelatedBlogs(mockRelatedBlogs);
         
-        /* Commented out until backend API is ready
         const response = await blogService.getBlogById(id);
         
         if (response && response.data) {
@@ -184,7 +183,6 @@ const BlogDetailPage = () => {
           setBlog(mockBlog);
           setRelatedBlogs(mockRelatedBlogs);
         }
-        */
       } catch (error) {
         console.error('Error fetching blog details:', error);
         setError('Không thể tải bài viết. Vui lòng thử lại sau.');
