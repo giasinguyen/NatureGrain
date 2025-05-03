@@ -1,5 +1,6 @@
 package com.naturegrain.entity;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -39,6 +40,7 @@ public class Blog {
     @JoinTable(name = "blog_tag", 
             joinColumns = @JoinColumn(name = "blog_id"),
             inverseJoinColumns = @JoinColumn(name = "tag_id"))
+    @JsonManagedReference
     private Set<Tag> tags = new HashSet<>();
     
     private Timestamp createAt;

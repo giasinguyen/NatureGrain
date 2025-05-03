@@ -1,5 +1,6 @@
 package com.naturegrain.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -23,5 +24,6 @@ public class Tag {
     private boolean enable;
     
     @ManyToMany(mappedBy = "tags")
+    @JsonBackReference
     private Set<Blog> blogs = new HashSet<>();
 }

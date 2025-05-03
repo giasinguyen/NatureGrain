@@ -31,7 +31,7 @@ public class BlogController {
     @Autowired
     private BlogService blogService;
 
-    @GetMapping("/")
+    @GetMapping({"", "/"})
     @Operation(summary="Lấy tất cả danh sách blog")
     public ResponseEntity<List<Blog>> getList(){
         List<Blog> list = blogService.getList();
