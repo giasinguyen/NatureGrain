@@ -162,24 +162,30 @@ const BlogDetailPage = () => {
     const fetchBlogDetails = async () => {
       setLoading(true);
       try {
-        // Use mock data directly since API endpoints are not ready yet
-        setBlog(mockBlog);
-        setRelatedBlogs(mockRelatedBlogs);
-        
-        const response = await blogService.getBlogById(id);
+        const response = await blogService.getBlog(id);
         
         if (response && response.data) {
+          console.log('Blog detail from API:', response.data);
           setBlog(response.data);
           
-          // Fetch related blogs (can be based on tags or categories)
-          const relatedResponse = await blogService.getRelatedBlogs(response.data.id);
-          if (relatedResponse && relatedResponse.data) {
-            setRelatedBlogs(relatedResponse.data);
-          } else {
+          // Fetch related blogs
+          try {
+            // Giả sử backend có API cho bài viết liên quan
+            const relatedResponse = await blogService.getBlogs();
+            if (relatedResponse && relatedResponse.data) {
+              // Lọc ra các bài viết khác bài hiện tại
+              const otherBlogs = relatedResponse.data.filter(b => b.id !== parseInt(id));
+              // Lấy tối đa 3 bài liên quan
+              setRelatedBlogs(otherBlogs.slice(0, 3));
+            } else {
+              setRelatedBlogs(mockRelatedBlogs);
+            }
+          } catch (relatedError) {
+            console.error('Error fetching related blogs:', relatedError);
             setRelatedBlogs(mockRelatedBlogs);
           }
         } else {
-          // Use mock data for development
+          console.warn('Blog API returned no data, using mock data instead');
           setBlog(mockBlog);
           setRelatedBlogs(mockRelatedBlogs);
         }

@@ -146,24 +146,20 @@ const BlogsPage = () => {
   const allTags = [...new Set(mockBlogs.flatMap(blog => blog.tags.map(tag => tag.name)))];
   const [selectedTag, setSelectedTag] = useState('');
   
-  // Fetch blogs or use mock data
+  // Fetch blogs from API
   useEffect(() => {
     const fetchBlogs = async () => {
       setLoading(true);
       try {
-        // Skip API call and use mock data directly until backend is ready
-        setBlogs(mockBlogs);
-        
-        /* Commented out until backend API is ready
         const response = await blogService.getBlogs();
         
         if (response && response.data) {
+          console.log('Blogs data from API:', response.data);
           setBlogs(response.data);
         } else {
-          // Use mock data if API fails or is not available yet
+          console.warn('API returned no data, using mock data instead');
           setBlogs(mockBlogs);
         }
-        */
       } catch (error) {
         console.error('Error fetching blogs:', error);
         setError('Không thể tải bài viết. Vui lòng thử lại sau.');
