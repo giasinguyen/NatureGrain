@@ -9,7 +9,6 @@ import {
 } from '@heroicons/react/24/outline';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 
-// Create a custom LeafIcon since it's not available in heroicons
 const LeafIcon = (props) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -37,7 +36,6 @@ const LeafIcon = (props) => (
   </svg>
 );
 
-// Import icons conditionally to prevent errors
 const Icons = {
   ShieldCheckIcon,
   LeafIcon,
@@ -49,7 +47,6 @@ const Icons = {
 
 const AboutPage = () => {
   const [aboutData, setAboutData] = useState({
-    // Default data will be used since API endpoint doesn't exist yet
     heroSection: {
       title: 'Về NatureGrain',
       subtitle: 'Thực phẩm hữu cơ - Cuộc sống xanh',
