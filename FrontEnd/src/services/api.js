@@ -152,4 +152,15 @@ export const userService = {
   changePassword: (passwordData) => api.put('/user/change-password', passwordData),
 };
 
+// Contact Services
+export const contactService = {
+  submitContactForm: (contactData) => api.post('/contact', contactData),
+  getContactInfo: () => api.get('/contact/info')
+};
+
+// About Page Services
+export const aboutService = {
+  getAboutPageData: () => api.get('/about')
+};
+
 export default api;
