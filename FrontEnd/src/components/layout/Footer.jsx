@@ -14,7 +14,6 @@ const Footer = () => {
   const handleSubscribe = (e) => {
     e.preventDefault();
     if (email) {
-      // TODO: Implement newsletter subscription
       alert(`Cảm ơn bạn đã đăng ký nhận tin với email: ${email}`);
       setEmail('');
     }
@@ -22,13 +21,10 @@ const Footer = () => {
   
   return (
     <footer className="bg-gray-800 text-gray-200">
-      {/* Main Footer */}
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {/* About Company */}
           <div>
             <Link to="/" className="flex items-center mb-4">
-              <img src="/logo-white.svg" alt="NatureGrain" className="h-10" />
               <span className="ml-2 font-bold text-xl text-white">
                 Nature<span className="text-green-400">Grain</span>
               </span>
@@ -38,7 +34,7 @@ const Footer = () => {
             </p>
             <div className="flex space-x-4">
               <a 
-                href="https://facebook.com" 
+                href="https://facebook.com/user.NTGS" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center hover:bg-green-600 transition-colors"
@@ -48,7 +44,7 @@ const Footer = () => {
                 </svg>
               </a>
               <a 
-                href="https://instagram.com" 
+                href="https://instagram.com/iamgiasi" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center hover:bg-green-600 transition-colors"
@@ -58,7 +54,7 @@ const Footer = () => {
                 </svg>
               </a>
               <a 
-                href="https://youtube.com" 
+                href="https://youtube.com/@iamgiasi" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center hover:bg-green-600 transition-colors"
@@ -70,7 +66,6 @@ const Footer = () => {
             </div>
           </div>
           
-          {/* Quick Links */}
           <div>
             <h3 className="text-lg font-bold text-white mb-4">Liên kết nhanh</h3>
             <ul className="space-y-2">
@@ -119,24 +114,23 @@ const Footer = () => {
             </ul>
           </div>
           
-          {/* Contact Info */}
           <div>
             <h3 className="text-lg font-bold text-white mb-4">Thông tin liên hệ</h3>
             <ul className="space-y-3">
               <li className="flex items-start">
                 <MapPinIcon className="w-5 h-5 mr-3 text-green-400 flex-shrink-0" />
-                <span>123 Đường Nguyễn Văn Linh, Quận 7, TP. Hồ Chí Minh</span>
+                <span>12 Nguyễn Văn Bảo, Phường 1, Quận Gò Vấp, TP. Hồ Chí Minh</span>
               </li>
               <li className="flex items-start">
                 <PhoneIcon className="w-5 h-5 mr-3 text-green-400 flex-shrink-0" />
                 <span>
-                  Hotline: <a href="tel:+84977123456" className="hover:text-green-400">0977.123.456</a>
+                  Hotline: <a href="tel:+84977123456" className="hover:text-green-400">034.899.6487</a>
                 </span>
               </li>
               <li className="flex items-start">
                 <EnvelopeIcon className="w-5 h-5 mr-3 text-green-400 flex-shrink-0" />
                 <span>
-                  Email: <a href="mailto:info@naturegrain.com" className="hover:text-green-400">info@naturegrain.com</a>
+                  Email: <a href="mailto:info@naturegrain.com" className="hover:text-green-400">giasinguyentran@gmail.com</a>
                 </span>
               </li>
               <li className="flex items-start">
@@ -150,7 +144,6 @@ const Footer = () => {
             </ul>
           </div>
           
-          {/* Newsletter */}
           <div>
             <h3 className="text-lg font-bold text-white mb-4">Đăng ký nhận tin</h3>
             <p className="mb-4 text-gray-300">
@@ -161,7 +154,7 @@ const Footer = () => {
                 <input
                   type="email"
                   placeholder="Nhập email của bạn"
-                  className="px-4 py-2 rounded-md text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 flex-grow"
+                  className="px-4 py-2 rounded-md text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 flex-grow bg-amber-50"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -174,22 +167,14 @@ const Footer = () => {
                 </button>
               </div>
             </form>
-            <div className="mt-4">
-              <img 
-                src="/payment-methods.png" 
-                alt="Phương thức thanh toán" 
-                className="h-8"
-              />
-            </div>
           </div>
         </div>
       </div>
       
-      {/* Copyright */}
       <div className="bg-gray-900 py-4">
         <div className="container mx-auto px-4 text-center text-gray-400 text-sm">
           <p>© {new Date().getFullYear()} NatureGrain - Tất cả các quyền được bảo lưu</p>
-          <p className="mt-1">Thiết kế và phát triển bởi Team NatureGrain</p>
+          <p className="mt-1">Thiết kế và phát triển bởi Nguyễn Trần Gia Sĩ</p>
         </div>
       </div>
     </footer>

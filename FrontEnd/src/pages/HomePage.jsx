@@ -373,7 +373,7 @@ const HomePage = () => {
               <input 
                 type="email" 
                 placeholder="Nhập email của bạn" 
-                className="flex-1 py-3 px-4 rounded-full text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400"
+                className="flex-1 py-3 px-4 rounded-full text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-400 bg-white shadow-sm"
               />
               <button 
                 type="submit" 
