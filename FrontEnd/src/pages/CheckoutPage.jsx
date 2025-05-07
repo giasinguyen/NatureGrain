@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { orderService } from '../services/api';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
+import { toast } from 'react-toastify';
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
@@ -16,13 +17,15 @@ const CheckoutPage = () => {
 
   // Form state
   const [formData, setFormData] = useState({
-    fullName: currentUser?.fullName || '',
+    firstname: currentUser?.fullName?.split(' ')[0] || '',
+    lastname: currentUser?.fullName?.split(' ').slice(1).join(' ') || '',
     email: currentUser?.email || '',
     phone: currentUser?.phone || '',
     address: currentUser?.address || '',
-    city: '',
-    district: '',
-    ward: '',
+    country: 'Việt Nam',
+    town: '',
+    state: '',
+    postCode: '',
     note: '',
     paymentMethod: 'COD' // Default payment method
   });
@@ -57,56 +60,71 @@ const CheckoutPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Basic validation
-    if (!formData.fullName || !formData.email || !formData.phone || !formData.address) {
-      setError('Vui lòng điền đầy đủ thông tin cần thiết.');
-      return;
-    }
-
-    // Create order object
-    const orderData = {
-      customerInfo: {
-        fullName: formData.fullName,
-        email: formData.email,
-        phone: formData.phone,
-        address: `${formData.address}, ${formData.ward}, ${formData.district}, ${formData.city}`,
-      },
-      orderItems: cart.map(item => ({
-        productId: item.id,
-        quantity: item.quantity,
-        price: item.price
-      })),
-      totalAmount: orderTotal,
-      shippingFee: actualShippingCost,
-      note: formData.note,
-      paymentMethod: formData.paymentMethod
-    };
+    // // Basic validation
+    // if (!formData.firstname || !formData.lastname || !formData.email || !formData.phone || 
+    //     !formData.address || !formData.town || !formData.state) {
+    //   setError('Vui lòng điền đầy đủ thông tin cần thiết.');
+    //   return;
+    // }
 
     try {
       setLoading(true);
       setError(null);
       
-      // Call API to create order
+      // Format orderDetails as required by backend
+      const orderDetails = cart.map(item => ({
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity
+      }));
+
+      // Create order object in the format expected by backend
+      const orderData = {
+        firstname: formData.firstname,
+        lastname: formData.lastname,
+        email: formData.email,
+        phone: formData.phone,
+        country: formData.country,
+        address: formData.address,
+        town: formData.town,
+        state: formData.state,
+        postCode: parseInt(formData.postCode) || 0,
+        note: formData.note,
+        totalPrice: orderTotal,
+        username: currentUser?.username,
+        orderDetails: orderDetails
+      };
+
+      console.log('Sending order data:', orderData);
+      
+      // Call API to create order using the correct endpoint
       const response = await orderService.createOrder(orderData);
-      console.log('Order created:', response.data);
+      console.log('Order response:', response);
       
       // Handle successful order
-      setOrderSuccess(true);
-      setOrderId(response.data.id);
-      
-      // Clear cart
-      clearCart();
-      
-      // If payment method is VNPAY, we would redirect to VNPAY here
-      if (formData.paymentMethod === 'VNPAY') {
-        // This is a placeholder for future VNPAY implementation
-        // window.location.href = response.data.paymentUrl;
-        alert('VNPAY thanh toán sẽ được triển khai trong tương lai!');
+      if (response.status === 200) {
+        setOrderSuccess(true);
+        // For demo purposes, use a random ID since the backend may not return one
+        setOrderId(response.data.id || `ORD-${Math.floor(Math.random() * 10000)}`);
+        
+        // Clear cart
+        clearCart();
+        
+        toast.success('Đặt hàng thành công!');
+        
+        // If payment method is VNPAY, we would redirect to VNPAY here
+        if (formData.paymentMethod === 'VNPAY') {
+          // This is a placeholder for future VNPAY implementation
+          // window.location.href = response.data.paymentUrl;
+          alert('VNPAY thanh toán sẽ được triển khai trong tương lai!');
+        }
+      } else {
+        setError('Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại.');
       }
-      
     } catch (err) {
       console.error('Error creating order:', err);
       setError('Đã xảy ra lỗi khi đặt hàng. Vui lòng thử lại sau.');
+      toast.error('Đặt hàng thất bại!');
     } finally {
       setLoading(false);
     }

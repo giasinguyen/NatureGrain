@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -38,16 +39,24 @@ public class AuthTokenFilter extends OncePerRequestFilter  {
         if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
           String username = jwtUtils.getUserNameFromJwtToken(jwt);
   
-          UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-          
-          UsernamePasswordAuthenticationToken authentication = 
-              new UsernamePasswordAuthenticationToken(userDetails,
-                                                      null,
-                                                      userDetails.getAuthorities());
-          
-          authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-  
-          SecurityContextHolder.getContext().setAuthentication(authentication);
+          try {
+            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            
+            UsernamePasswordAuthenticationToken authentication = 
+                new UsernamePasswordAuthenticationToken(userDetails,
+                                                        null,
+                                                        userDetails.getAuthorities());
+            
+            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+    
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+          } catch (UsernameNotFoundException e) {
+            // User not found but JWT is valid - this can happen if user was deleted
+            // Just log it and don't set authentication - user will be treated as anonymous
+            logger.warn("JWT valid but user {} no longer exists in the database", username);
+            // Clear any invalid cookies
+            jwtUtils.cleanJwtCookie(response);
+          }
         }
       } catch (Exception e) {
         logger.error("Cannot set user authentication: {}", e);
@@ -60,5 +69,4 @@ public class AuthTokenFilter extends OncePerRequestFilter  {
       String jwt = jwtUtils.getJwtFromCookies(request);
       return jwt;
     }
-    
 }

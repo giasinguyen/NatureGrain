@@ -11,22 +11,37 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Kiểm tra xem người dùng đã đăng nhập chưa (từ token)
+    // Kiểm tra xem người dùng đã đăng nhập chưa
     const checkAuth = async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (token) {
+        // Check stored user ID first for quick UI display
+        const userId = localStorage.getItem('userId');
+        const username = localStorage.getItem('username');
+        
+        if (userId && username) {
+          // Set minimal user info first for better UX
+          setCurrentUser({
+            id: userId,
+            username: username,
+            loading: true // indicate we're still loading full details
+          });
+          
+          // Then fetch complete user details from server using the cookie
           const user = await authService.getCurrentUser();
           if (user) {
             setCurrentUser(user);
           } else {
-            // Invalid token - clear it
-            localStorage.removeItem('token');
+            // Invalid session - clear localStorage
+            localStorage.removeItem('userId');
+            localStorage.removeItem('username');
+            setCurrentUser(null);
           }
         }
       } catch (error) {
         console.error('Authentication check failed:', error);
-        localStorage.removeItem('token');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('username');
+        setCurrentUser(null);
       } finally {
         setLoading(false);
       }
@@ -46,13 +61,19 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('userId', response.data.id);
         localStorage.setItem('username', response.data.username);
         
-        // Set the current user with the response data
-        setCurrentUser({
+        // Store additional user info that might be useful
+        const userInfo = {
           id: response.data.id,
           username: response.data.username,
           email: response.data.email,
           roles: response.data.roles
-        });
+        };
+        
+        // Store user data in sessionStorage for better persistence
+        sessionStorage.setItem('userInfo', JSON.stringify(userInfo));
+        
+        // Set the current user with the response data
+        setCurrentUser(userInfo);
         
         toast.success('Đăng nhập thành công!');
         return true;
@@ -101,6 +122,7 @@ export const AuthProvider = ({ children }) => {
     authService.logout().then(() => {
       localStorage.removeItem('userId');
       localStorage.removeItem('username');
+      sessionStorage.removeItem('userInfo');
       setCurrentUser(null);
       toast.info('Đã đăng xuất thành công');
     }).catch(error => {
@@ -108,6 +130,7 @@ export const AuthProvider = ({ children }) => {
       // Still clear local state even if API call fails
       localStorage.removeItem('userId');
       localStorage.removeItem('username');
+      sessionStorage.removeItem('userInfo');
       setCurrentUser(null);
     });
   };

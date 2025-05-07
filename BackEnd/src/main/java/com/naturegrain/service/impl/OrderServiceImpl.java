@@ -31,9 +31,12 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public void placeOrder(CreateOrderRequest request) {
-        // TODO Auto-generated method stub
+        // Create the order
         Order order = new Order();
-        User user = userRepository.findByUsername(request.getUsername()).orElseThrow(() -> new NotFoundException("Not Found User With Username:" + request.getUsername()));
+        User user = userRepository.findByUsername(request.getUsername())
+            .orElseThrow(() -> new NotFoundException("Not Found User With Username:" + request.getUsername()));
+        
+        // Set basic order information
         order.setFirstname(request.getFirstname());
         order.setLastname(request.getLastname());
         order.setCountry(request.getCountry());
@@ -43,22 +46,28 @@ public class OrderServiceImpl implements OrderService {
         order.setPostCode(request.getPostCode());
         order.setEmail(request.getEmail());
         order.setPhone(request.getPhone());
-        order.setNote(request.getNote());   
+        order.setNote(request.getNote());
+        order.setUser(user);
+        order.setStatus("PENDING");
+        
+        // Save the order first to generate an ID
         orderRepository.save(order);
+        
+        // Process order details
         long totalPrice = 0;
         for(CreateOrderDetailRequest rq: request.getOrderDetails()){
             OrderDetail orderDetail = new OrderDetail();
             orderDetail.setName(rq.getName());
             orderDetail.setPrice(rq.getPrice());
             orderDetail.setQuantity(rq.getQuantity());
-            orderDetail.setSubTotal(rq.getPrice()* rq.getQuantity());
+            orderDetail.setSubTotal(rq.getPrice() * rq.getQuantity());
             orderDetail.setOrder(order);
             totalPrice += orderDetail.getSubTotal();
             orderDetailRepository.save(orderDetail);
-            
         }
+        
+        // Update the total price and save the order again
         order.setTotalPrice(totalPrice);
-        order.setUser(user);
         orderRepository.save(order);
     }
 

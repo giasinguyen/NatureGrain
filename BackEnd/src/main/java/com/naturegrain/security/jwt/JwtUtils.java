@@ -5,10 +5,12 @@ import java.util.Date;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.web.util.WebUtils;
 
@@ -47,6 +49,17 @@ public class JwtUtils {
     public ResponseCookie getCleanJwtCookie() {
       ResponseCookie cookie = ResponseCookie.from(jwtCookie, null).path("/api").build();
       return cookie;
+    }
+  
+    // Add method to clean JWT cookie directly through HttpServletResponse
+    public void cleanJwtCookie(HttpServletResponse response) {
+      ResponseCookie cookie = ResponseCookie.from(jwtCookie, "")
+          .path("/api")
+          .maxAge(0)
+          .httpOnly(true)
+          .build();
+      response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+      logger.info("JWT cookie cleared for invalid user");
     }
   
     public String getUserNameFromJwtToken(String token) {

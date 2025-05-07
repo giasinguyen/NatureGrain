@@ -12,7 +12,10 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.PrePersist;
 import javax.persistence.Table;
+
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -50,6 +53,9 @@ public class Order {
     private String note;
 
     private long totalPrice;
+    
+    // Add status field with default value
+    private String status = "PENDING";
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name="user_id")
@@ -58,9 +64,20 @@ public class Order {
     private Timestamp createAt;
 
     @OneToMany(mappedBy="order", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JsonManagedReference // This breaks the circular reference for JSON serialization
     private List<OrderDetail> orderDetails; 
 
     public void setPostCode(long postcode) {
         this.postcode = String.valueOf(postcode);
+    }
+    
+    @PrePersist
+    protected void onCreate() {
+        if (createAt == null) {
+            createAt = new Timestamp(System.currentTimeMillis());
+        }
+        if (status == null) {
+            status = "PENDING";
+        }
     }
 }

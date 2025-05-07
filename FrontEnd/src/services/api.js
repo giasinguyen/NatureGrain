@@ -119,7 +119,7 @@ export const blogService = {
 
 // Order Services
 export const orderService = {
-  createOrder: (orderData) => api.post('/order', orderData),
+  createOrder: (orderData) => api.post('/order/create', orderData),
   getOrders: () => api.get('/order'),
   getOrder: (id) => api.get(`/order/${id}`),
   cancelOrder: (id) => api.put(`/order/${id}/cancel`),
