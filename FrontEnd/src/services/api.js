@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { jwtDecode } from 'jwt-decode';
 
 const API_URL = 'http://localhost:8080/api';
 
@@ -9,37 +8,8 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true // Important: Allows cookies to be sent and received
 });
-
-// Thêm interceptor request để xử lý token
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      // Kiểm tra token hết hạn
-      try {
-        const decodedToken = jwtDecode(token);
-        const currentTime = Date.now() / 1000;
-        
-        if (decodedToken.exp < currentTime) {
-          // Token đã hết hạn, chuyển hướng về trang đăng nhập
-          localStorage.removeItem('token');
-          window.location.href = '/login';
-          return Promise.reject('Token expired');
-        }
-        
-        config.headers.Authorization = `Bearer ${token}`;
-      } catch (error) {
-        console.error('Invalid token:', error);
-        localStorage.removeItem('token');
-      }
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
 
 // Interceptor response để xử lý lỗi
 api.interceptors.response.use(
@@ -52,7 +22,8 @@ api.interceptors.response.use(
       switch (response.status) {
         case 401:
           // Unauthorized - Đăng xuất và chuyển hướng đến trang đăng nhập
-          localStorage.removeItem('token');
+          localStorage.removeItem('userId');
+          localStorage.removeItem('username');
           window.location.href = '/login';
           break;
         case 403:
@@ -77,32 +48,21 @@ api.interceptors.response.use(
 
 // Auth Services
 export const authService = {
-  login: (username, password) => api.post('/auth/signin', { username, password }),
-  register: (userData) => api.post('/auth/signup', userData),
+  login: (username, password) => api.post('/auth/login', { username, password }),
+  register: (userData) => api.post('/auth/register', userData),
+  logout: () => api.post('/auth/logout'),
   getCurrentUser: async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return null;
-    
     try {
-      // First, decode the token to check expiration locally
-      const decoded = jwtDecode(token);
-      const currentTime = Date.now() / 1000;
-      
-      if (decoded.exp < currentTime) {
-        localStorage.removeItem('token');
-        return null;
-      }
-      
-      // Then validate with backend and get fresh user data
+      // Get current user data from backend - using cookies for authentication
       const response = await api.get('/auth/me');
       return response.data;
     } catch (error) {
       console.error('Error getting current user:', error);
-      localStorage.removeItem('token');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('username');
       return null;
     }
-  },
-  validateToken: () => api.get('/auth/validate-token'),
+  }
 };
 
 // Product Services

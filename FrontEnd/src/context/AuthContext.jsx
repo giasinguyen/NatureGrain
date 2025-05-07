@@ -40,16 +40,24 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       const response = await authService.login(username, password);
       
-      if (response && response.data && response.data.token) {
-        localStorage.setItem('token', response.data.token);
+      // The backend returns user info directly in the response with JWT in cookies
+      if (response && response.data) {
+        // Store user ID in localStorage for persistence
+        localStorage.setItem('userId', response.data.id);
+        localStorage.setItem('username', response.data.username);
         
-        // Cập nhật thông tin người dùng hiện tại
-        const user = await authService.getCurrentUser();
-        setCurrentUser(user);
+        // Set the current user with the response data
+        setCurrentUser({
+          id: response.data.id,
+          username: response.data.username,
+          email: response.data.email,
+          roles: response.data.roles
+        });
+        
         toast.success('Đăng nhập thành công!');
         return true;
       } else {
-        toast.error(response.data?.message || 'Đăng nhập thất bại!');
+        toast.error('Đăng nhập thất bại! Vui lòng kiểm tra thông tin đăng nhập.');
         return false;
       }
     } catch (error) {
@@ -64,7 +72,13 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       setLoading(true);
-      const response = await authService.register(userData);
+      // Add role array with default user role
+      const requestData = {
+        ...userData,
+        role: ["user"]
+      };
+      
+      const response = await authService.register(requestData);
       
       if (response && response.status === 200) {
         toast.success('Đăng ký thành công! Vui lòng đăng nhập.');
@@ -83,9 +97,19 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    setCurrentUser(null);
-    toast.info('Đã đăng xuất thành công');
+    // Call logout API to clear cookie on server
+    authService.logout().then(() => {
+      localStorage.removeItem('userId');
+      localStorage.removeItem('username');
+      setCurrentUser(null);
+      toast.info('Đã đăng xuất thành công');
+    }).catch(error => {
+      console.error('Logout failed:', error);
+      // Still clear local state even if API call fails
+      localStorage.removeItem('userId');
+      localStorage.removeItem('username');
+      setCurrentUser(null);
+    });
   };
 
   const value = {

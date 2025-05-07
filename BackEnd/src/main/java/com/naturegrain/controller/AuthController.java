@@ -14,6 +14,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -83,5 +84,25 @@ public class AuthController {
       ResponseCookie cookie = jwtUtils.getCleanJwtCookie();
       return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie.toString())
           .body(new MessageResponse("You've been logout!"));
+    }
+
+    @GetMapping("/me")
+    @Operation(summary="Get current authenticated user")
+    public ResponseEntity<?> getCurrentUser(Authentication authentication) {
+        if (authentication != null && authentication.isAuthenticated()) {
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            
+            List<String> roles = userDetails.getAuthorities().stream()
+                    .map(item -> item.getAuthority())
+                    .collect(Collectors.toList());
+            
+            return ResponseEntity.ok(new UserInfoResponse(
+                    userDetails.getId(),
+                    userDetails.getUsername(),
+                    userDetails.getEmail(),
+                    roles));
+        }
+        
+        return ResponseEntity.status(401).body(new MessageResponse("Not authenticated"));
     }
 }

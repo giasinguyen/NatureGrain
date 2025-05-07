@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { LockClosedIcon, UserIcon } from '@heroicons/react/24/outline';
@@ -6,10 +6,10 @@ import { LockClosedIcon, UserIcon } from '@heroicons/react/24/outline';
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { login, isAuthenticated } = useAuth();
   
-  // Redirect location after login (if coming from a protected page)
-  const from = location.state?.from?.pathname || '/';
+  // Check if there's a specific redirect after login, default to profile page
+  const from = location.state?.from?.pathname || '/user/profile';
 
   // Form state
   const [formData, setFormData] = useState({
@@ -19,6 +19,13 @@ const LoginPage = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginError, setLoginError] = useState('');
+
+  // Effect to redirect if already logged in
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/user/profile');
+    }
+  }, [isAuthenticated, navigate]);
 
   // Handle input changes
   const handleChange = (e) => {
@@ -69,10 +76,12 @@ const LoginPage = () => {
       setLoginError('');
       
       try {
-        await login(formData.username, formData.password);
+        const success = await login(formData.username, formData.password);
         
-        // Navigate to intended destination or home
-        navigate(from, { replace: true });
+        if (success) {
+          // Navigate to profile page after successful login
+          navigate('/user/profile', { replace: true });
+        }
       } catch (error) {
         // Handle login failure
         setLoginError(
