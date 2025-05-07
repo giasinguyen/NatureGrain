@@ -79,10 +79,30 @@ api.interceptors.response.use(
 export const authService = {
   login: (username, password) => api.post('/auth/signin', { username, password }),
   register: (userData) => api.post('/auth/signup', userData),
-  getCurrentUser: () => {
+  getCurrentUser: async () => {
     const token = localStorage.getItem('token');
-    return token ? jwtDecode(token) : null;
+    if (!token) return null;
+    
+    try {
+      // First, decode the token to check expiration locally
+      const decoded = jwtDecode(token);
+      const currentTime = Date.now() / 1000;
+      
+      if (decoded.exp < currentTime) {
+        localStorage.removeItem('token');
+        return null;
+      }
+      
+      // Then validate with backend and get fresh user data
+      const response = await api.get('/auth/me');
+      return response.data;
+    } catch (error) {
+      console.error('Error getting current user:', error);
+      localStorage.removeItem('token');
+      return null;
+    }
   },
+  validateToken: () => api.get('/auth/validate-token'),
 };
 
 // Product Services

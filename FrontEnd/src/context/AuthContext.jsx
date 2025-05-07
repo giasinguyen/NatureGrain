@@ -14,8 +14,16 @@ export const AuthProvider = ({ children }) => {
     // Kiểm tra xem người dùng đã đăng nhập chưa (từ token)
     const checkAuth = async () => {
       try {
-        const user = authService.getCurrentUser();
-        setCurrentUser(user);
+        const token = localStorage.getItem('token');
+        if (token) {
+          const user = await authService.getCurrentUser();
+          if (user) {
+            setCurrentUser(user);
+          } else {
+            // Invalid token - clear it
+            localStorage.removeItem('token');
+          }
+        }
       } catch (error) {
         console.error('Authentication check failed:', error);
         localStorage.removeItem('token');
@@ -31,16 +39,23 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       const response = await authService.login(username, password);
-      localStorage.setItem('token', response.data.token);
       
-      // Cập nhật thông tin người dùng hiện tại
-      setCurrentUser(authService.getCurrentUser());
-      toast.success('Đăng nhập thành công!');
-      return response.data;
+      if (response && response.data && response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        
+        // Cập nhật thông tin người dùng hiện tại
+        const user = await authService.getCurrentUser();
+        setCurrentUser(user);
+        toast.success('Đăng nhập thành công!');
+        return true;
+      } else {
+        toast.error(response.data?.message || 'Đăng nhập thất bại!');
+        return false;
+      }
     } catch (error) {
-      const message = error.response?.data?.message || 'Đăng nhập thất bại';
-      toast.error(message);
-      throw error;
+      const errorMessage = error.response?.data?.message || 'Đăng nhập thất bại!';
+      toast.error(errorMessage);
+      return false;
     } finally {
       setLoading(false);
     }
@@ -50,12 +65,18 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       const response = await authService.register(userData);
-      toast.success('Đăng ký thành công! Vui lòng đăng nhập.');
-      return response.data;
+      
+      if (response && response.status === 200) {
+        toast.success('Đăng ký thành công! Vui lòng đăng nhập.');
+        return true;
+      } else {
+        toast.error(response.data?.message || 'Đăng ký thất bại!');
+        return false;
+      }
     } catch (error) {
-      const message = error.response?.data?.message || 'Đăng ký thất bại';
-      toast.error(message);
-      throw error;
+      const errorMessage = error.response?.data?.message || 'Đăng ký thất bại!';
+      toast.error(errorMessage);
+      return false;
     } finally {
       setLoading(false);
     }
@@ -64,20 +85,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('token');
     setCurrentUser(null);
-    toast.info('Đã đăng xuất');
-  };
-
-  const hasRole = (role) => {
-    if (!currentUser || !currentUser.roles) return false;
-    return currentUser.roles.includes(role);
-  };
-
-  const isAdmin = () => {
-    return hasRole('ROLE_ADMIN');
-  };
-
-  const isModerator = () => {
-    return hasRole('ROLE_MODERATOR');
+    toast.info('Đã đăng xuất thành công');
   };
 
   const value = {
@@ -86,12 +94,14 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    isAdmin,
-    isModerator,
-    hasRole
+    isAuthenticated: !!currentUser
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export default AuthContext;

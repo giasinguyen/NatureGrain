@@ -11,6 +11,7 @@ import javax.persistence.Table;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 @Data
@@ -18,6 +19,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Entity
 @Table(name= "image")
+@EqualsAndHashCode(of = {"id"})  // Use only ID for equality checks to avoid infinite recursion
 public class Image {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
