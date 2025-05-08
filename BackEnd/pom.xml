@@ -7,13 +7,13 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>2.7.8</version>
-		<relativePath /> <!-- lookup parent from repository -->
+		<relativePath />
 	</parent>
-	<groupId>com.example</groupId>
-	<artifactId>ogani</artifactId>
+	<groupId>com.naturegrain</groupId>
+	<artifactId>NatureGrain</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>ogani</name>
-	<description>Demo project for Spring Boot</description>
+	<name>NatureGrain</name>
+	<description>NatureGrain</description>
 	<properties>
 		<java.version>17</java.version>
 	</properties>
