@@ -8,7 +8,8 @@ import {
   EnvelopeIcon,
   Bars3Icon,
   XMarkIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  Cog6ToothIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -21,6 +22,9 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  
+  // Kiểm tra nếu user là admin
+  const isAdmin = currentUser?.roles?.includes('ROLE_ADMIN');
 
   // Xử lý hiệu ứng thu gọn header khi cuộn trang
   useEffect(() => {
@@ -71,7 +75,15 @@ const Header = () => {
           </div>
           <div className="flex items-center text-sm space-x-4">
             {currentUser ? (
-              <span>Xin chào, <strong>{currentUser.username || 'Khách hàng'}</strong></span>
+              <div className="flex items-center space-x-4">
+                <span>Xin chào, <strong>{currentUser.username || 'Khách hàng'}</strong></span>
+                {isAdmin && (
+                  <Link to="/admin" className="flex items-center hover:underline text-white">
+                    <Cog6ToothIcon className="w-4 h-4 mr-1" />
+                    <span>Quản trị</span>
+                  </Link>
+                )}
+              </div>
             ) : (
               <>
                 <Link to="/login" className="hover:underline">Đăng nhập</Link>
@@ -140,23 +152,23 @@ const Header = () => {
                     {currentUser ? (
                       <>
                         <Link
-                          to="/profile"
+                          to="/user/profile"
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           onClick={() => setIsUserMenuOpen(false)}
                         >
                           Thông tin tài khoản
                         </Link>
                         <Link
-                          to="/orders"
+                          to="/user/orders"
                           className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           onClick={() => setIsUserMenuOpen(false)}
                         >
                           Đơn hàng của tôi
                         </Link>
-                        {currentUser.isAdmin && (
+                        {isAdmin && (
                           <Link
                             to="/admin"
-                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            className="block px-4 py-2 text-sm font-medium text-green-700 hover:bg-gray-100"
                             onClick={() => setIsUserMenuOpen(false)}
                           >
                             Quản trị hệ thống
@@ -321,26 +333,29 @@ const Header = () => {
                   <div className="font-medium mb-2">Xin chào, {currentUser.username}</div>
                   <div className="space-y-2">
                     <Link
-                      to="/profile"
+                      to="/user/profile"
                       className="block text-gray-700 hover:text-green-600"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       Thông tin tài khoản
                     </Link>
                     <Link
-                      to="/orders"
+                      to="/user/orders"
                       className="block text-gray-700 hover:text-green-600"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       Đơn hàng của tôi
                     </Link>
-                    {currentUser.isAdmin && (
+                    {isAdmin && (
                       <Link
                         to="/admin"
-                        className="block text-gray-700 hover:text-green-600"
+                        className="block font-medium text-green-700 hover:text-green-800"
                         onClick={() => setIsMenuOpen(false)}
                       >
-                        Quản trị hệ thống
+                        <div className="flex items-center">
+                          <Cog6ToothIcon className="w-4 h-4 mr-2" />
+                          Quản trị hệ thống
+                        </div>
                       </Link>
                     )}
                     <button

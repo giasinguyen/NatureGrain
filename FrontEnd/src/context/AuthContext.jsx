@@ -14,34 +14,88 @@ export const AuthProvider = ({ children }) => {
     // Kiểm tra xem người dùng đã đăng nhập chưa
     const checkAuth = async () => {
       try {
-        // Check stored user ID first for quick UI display
-        const userId = localStorage.getItem('userId');
-        const username = localStorage.getItem('username');
+        // Check stored user info from sessionStorage first for quick UI display
+        const storedUserInfo = sessionStorage.getItem('userInfo');
         
-        if (userId && username) {
-          // Set minimal user info first for better UX
-          setCurrentUser({
-            id: userId,
-            username: username,
-            loading: true // indicate we're still loading full details
-          });
+        if (storedUserInfo) {
+          // Parse stored user info
+          const userInfo = JSON.parse(storedUserInfo);
           
-          // Then fetch complete user details from server using the cookie
-          const user = await authService.getCurrentUser();
-          if (user) {
-            setCurrentUser(user);
+          // Set complete user info from sessionStorage for immediate UI display
+          setCurrentUser(userInfo);
+          
+          // Then fetch complete user details from server to validate session
+          try {
+            const user = await authService.getCurrentUser();
+            if (user) {
+              // Update with the latest data from server
+              const updatedUserInfo = {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                roles: user.roles
+              };
+              
+              // Update localStorage and sessionStorage
+              localStorage.setItem('userId', user.id);
+              localStorage.setItem('username', user.username);
+              sessionStorage.setItem('userInfo', JSON.stringify(updatedUserInfo));
+              
+              // Update state with the latest data
+              setCurrentUser(updatedUserInfo);
+            } else {
+              // Invalid session - clear storage
+              handleClearAuth();
+            }
+          } catch (serverError) {
+            // If server validation fails, still keep user logged in with stored data
+            console.warn('Server validation failed, using stored credentials:', serverError);
+            // We don't logout the user here, we keep using the stored info instead
+          }
+        } else {
+          // Check for userId/username as fallback (backward compatibility)
+          const userId = localStorage.getItem('userId');
+          const username = localStorage.getItem('username');
+          
+          if (userId && username) {
+            // Set minimal user info first for better UX
+            setCurrentUser({
+              id: userId,
+              username: username,
+              loading: true // indicate we're still loading full details
+            });
+            
+            // Then fetch complete user details from server using the cookie
+            try {
+              const user = await authService.getCurrentUser();
+              if (user) {
+                const updatedUserInfo = {
+                  id: user.id,
+                  username: user.username,
+                  email: user.email,
+                  roles: user.roles
+                };
+                
+                // Update sessionStorage for better persistence
+                sessionStorage.setItem('userInfo', JSON.stringify(updatedUserInfo));
+                setCurrentUser(updatedUserInfo);
+              } else {
+                // Invalid session - clear storage
+                handleClearAuth();
+              }
+            } catch (error) {
+              // Clear auth if server validation completely fails
+              console.error('Authentication check failed:', error);
+              handleClearAuth();
+            }
           } else {
-            // Invalid session - clear localStorage
-            localStorage.removeItem('userId');
-            localStorage.removeItem('username');
+            // No stored authentication
             setCurrentUser(null);
           }
         }
       } catch (error) {
-        console.error('Authentication check failed:', error);
-        localStorage.removeItem('userId');
-        localStorage.removeItem('username');
-        setCurrentUser(null);
+        console.error('Authentication check process failed:', error);
+        handleClearAuth();
       } finally {
         setLoading(false);
       }
@@ -49,6 +103,14 @@ export const AuthProvider = ({ children }) => {
 
     checkAuth();
   }, []);
+
+  // Helper function to clear all auth data
+  const handleClearAuth = () => {
+    localStorage.removeItem('userId');
+    localStorage.removeItem('username');
+    sessionStorage.removeItem('userInfo');
+    setCurrentUser(null);
+  };
 
   const login = async (username, password) => {
     try {
@@ -61,7 +123,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('userId', response.data.id);
         localStorage.setItem('username', response.data.username);
         
-        // Store additional user info that might be useful
+        // Store complete user info for better persistence
         const userInfo = {
           id: response.data.id,
           username: response.data.username,
@@ -69,7 +131,7 @@ export const AuthProvider = ({ children }) => {
           roles: response.data.roles
         };
         
-        // Store user data in sessionStorage for better persistence
+        // Store complete user data in sessionStorage
         sessionStorage.setItem('userInfo', JSON.stringify(userInfo));
         
         // Set the current user with the response data
@@ -120,18 +182,12 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     // Call logout API to clear cookie on server
     authService.logout().then(() => {
-      localStorage.removeItem('userId');
-      localStorage.removeItem('username');
-      sessionStorage.removeItem('userInfo');
-      setCurrentUser(null);
+      handleClearAuth();
       toast.info('Đã đăng xuất thành công');
     }).catch(error => {
       console.error('Logout failed:', error);
       // Still clear local state even if API call fails
-      localStorage.removeItem('userId');
-      localStorage.removeItem('username');
-      sessionStorage.removeItem('userInfo');
-      setCurrentUser(null);
+      handleClearAuth();
     });
   };
 

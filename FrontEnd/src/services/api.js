@@ -67,7 +67,7 @@ export const authService = {
 
 // Product Services
 export const productService = {
-  // Update to match available endpoints
+  // User facing endpoints
   getProducts: (params) => {
     // Check filter params and use appropriate endpoints
     if (params && params.category) {
@@ -92,19 +92,30 @@ export const productService = {
   searchProducts: (query) => api.get(`/product/search?keyword=${query}`),
   getProductsByCategory: (categoryId) => api.get(`/product/category/${categoryId}`),
   findRelatedProduct: (id) => api.get(`/product/related/${id}`),
+  
+  // Admin endpoints
+  createProduct: (productData) => api.post('/product/create', productData),
+  updateProduct: (id, productData) => api.put(`/product/${id}`, productData),
+  deleteProduct: (id) => api.delete(`/product/${id}`),
 };
 
 // Category Services
 export const categoryService = {
-  getCategories: () => api.get('/category/enabled'),
-  getListEnabled: () => {
-    return api.get('/category/enabled');
-  },
+  // User facing endpoints
+  getCategories: () => api.get('/category/'),
+  getListEnabled: () => api.get('/category/enabled'),
   getCategory: (id) => api.get(`/category/${id}`),
+  
+  // Admin endpoints
+  createCategory: (categoryData) => api.post('/category/create', categoryData),
+  updateCategory: (id, categoryData) => api.put(`/category/${id}`, categoryData),
+  deleteCategory: (id) => api.delete(`/category/${id}`),
+  enableCategory: (id) => api.put(`/category/${id}/enable`),
 };
 
 // Blog Services
 export const blogService = {
+  // User facing endpoints
   getBlogs: (params) => api.get('/blog', { params }),
   getBlog: (id) => api.get(`/blog/${id}`),
   getLatestBlogs: () => {
@@ -115,21 +126,38 @@ export const blogService = {
         return { data: [] };
       });
   },
+  
+  // Admin endpoints
+  createBlog: (blogData) => api.post('/blog/create', blogData),
+  updateBlog: (id, blogData) => api.put(`/blog/${id}`, blogData),
+  deleteBlog: (id) => api.delete(`/blog/${id}`),
 };
 
 // Order Services
 export const orderService = {
+  // User facing endpoints
   createOrder: (orderData) => api.post('/order/create', orderData),
   getOrders: () => api.get('/order'),
   getOrder: (id) => api.get(`/order/${id}`),
   cancelOrder: (id) => api.put(`/order/${id}/cancel`),
+  
+  // Admin endpoints
+  updateOrderStatus: (id, status) => api.put(`/order/${id}/status`, { status }),
+  getAllOrders: () => api.get('/order/all'),
+  getOrdersByStatus: (status) => api.get(`/order/status/${status}`),
 };
 
 // User Services
 export const userService = {
+  // User facing endpoints
   getUserProfile: () => api.get('/user/profile'),
   updateUserProfile: (userData) => api.put('/user/profile', userData),
   changePassword: (passwordData) => api.put('/user/change-password', passwordData),
+  
+  // Admin endpoints
+  getAllUsers: () => api.get('/user/all'),
+  getUserById: (id) => api.get(`/user/${id}`),
+  updateUserRole: (id, role) => api.put(`/user/${id}/role`, { role }),
 };
 
 // Contact Services
@@ -141,6 +169,12 @@ export const contactService = {
 // About Page Services
 export const aboutService = {
   getAboutPageData: () => api.get('/about')
+};
+
+// Dashboard Services (Admin)
+export const dashboardService = {
+  getStats: () => api.get('/admin/dashboard/stats'),
+  getSalesData: (period) => api.get(`/admin/dashboard/sales?period=${period}`),
 };
 
 export default api;
