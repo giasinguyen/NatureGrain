@@ -15,6 +15,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import lombok.AllArgsConstructor;
@@ -57,13 +58,16 @@ public class Order {
     // Add status field with default value
     private String status = "PENDING";
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    // Thay đổi từ EAGER sang LAZY để cải thiện hiệu suất
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name="user_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User user;
 
     private Timestamp createAt;
 
-    @OneToMany(mappedBy="order", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    // Thay đổi từ EAGER sang LAZY để tránh lỗi Hibernate Collections
+    @OneToMany(mappedBy="order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference // This breaks the circular reference for JSON serialization
     private List<OrderDetail> orderDetails; 
 

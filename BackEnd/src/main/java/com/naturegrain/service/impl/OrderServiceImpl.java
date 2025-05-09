@@ -2,6 +2,10 @@ package com.naturegrain.service.impl;
 
 import java.util.List;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -29,6 +33,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private UserRepository userRepository;
+    
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Override
     @Transactional
@@ -71,12 +78,23 @@ public class OrderServiceImpl implements OrderService {
         // Update the total price and save the order again
         order.setTotalPrice(totalPrice);
         orderRepository.save(order);
+        
+        // Đảm bảo tất cả thay đổi được lưu và session được flush
+        entityManager.flush();
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<Order> getList() {
-        return orderRepository.findAll(Sort.by("id").descending());
+        List<Order> orders = orderRepository.findAll(Sort.by("id").descending());
+        
+        // Khởi tạo lazy collections để tránh Hibernate collection warnings và tránh lỗi LazyInitializationException
+        for (Order order : orders) {
+            Hibernate.initialize(order.getOrderDetails());
+            Hibernate.initialize(order.getUser());
+        }
+        
+        return orders;
     }
 
     @Override
@@ -86,6 +104,12 @@ public class OrderServiceImpl implements OrderService {
             .orElseThrow(() -> new NotFoundException("Not Found User With Username:" + username));
 
         List<Order> orders = orderRepository.getOrderByUser(user.getId());
+        
+        // Khởi tạo lazy collections để tránh Hibernate collection warnings
+        for (Order order : orders) {
+            Hibernate.initialize(order.getOrderDetails());
+        }
+        
         return orders;  
     }
 }

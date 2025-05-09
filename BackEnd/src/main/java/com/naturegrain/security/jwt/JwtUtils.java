@@ -34,32 +34,46 @@ public class JwtUtils {
     public String getJwtFromCookies(HttpServletRequest request) {
       Cookie cookie = WebUtils.getCookie(request, jwtCookie);
       if (cookie != null) {
+        logger.debug("JWT cookie found: {}", jwtCookie);
         return cookie.getValue();
       } else {
+        logger.debug("No JWT cookie found with name: {}", jwtCookie);
         return null;
       }
     }
   
     public ResponseCookie generateJwtCookie(UserDetailsImpl userPrincipal) {
       String jwt = generateTokenFromUsername(userPrincipal.getUsername());
-      ResponseCookie cookie = ResponseCookie.from(jwtCookie, jwt).path("/api").maxAge(24 * 60 * 60).httpOnly(true).build();
+      // Cải thiện cấu hình cookie: thêm SameSite=Lax để hoạt động tốt hơn với cross-site
+      ResponseCookie cookie = ResponseCookie.from(jwtCookie, jwt)
+          .path("/") // Đặt path thành "/" thay vì "/api" để cookie có thể truy cập từ tất cả các đường dẫn
+          .maxAge(24 * 60 * 60) // 1 ngày
+          .httpOnly(true)
+          .sameSite("Lax") // Cho phép cookie được gửi trong các yêu cầu điều hướng cross-site
+          .build();
+      logger.info("Generated JWT cookie for user: {}", userPrincipal.getUsername());
       return cookie;
     }
   
     public ResponseCookie getCleanJwtCookie() {
-      ResponseCookie cookie = ResponseCookie.from(jwtCookie, null).path("/api").build();
+      ResponseCookie cookie = ResponseCookie.from(jwtCookie, null)
+          .path("/") // Phải cùng path với cookie khi tạo
+          .maxAge(0)
+          .httpOnly(true)
+          .sameSite("Lax")
+          .build();
       return cookie;
     }
   
-    // Add method to clean JWT cookie directly through HttpServletResponse
     public void cleanJwtCookie(HttpServletResponse response) {
       ResponseCookie cookie = ResponseCookie.from(jwtCookie, "")
-          .path("/api")
+          .path("/") // Phải cùng path với cookie khi tạo
           .maxAge(0)
           .httpOnly(true)
+          .sameSite("Lax")
           .build();
       response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
-      logger.info("JWT cookie cleared for invalid user");
+      logger.info("JWT cookie cleared");
     }
   
     public String getUserNameFromJwtToken(String token) {

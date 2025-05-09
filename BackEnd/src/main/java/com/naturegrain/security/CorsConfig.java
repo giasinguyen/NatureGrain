@@ -6,6 +6,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
+import java.util.Arrays;
+
 
 @Configuration
 public class CorsConfig {
@@ -15,7 +17,7 @@ public class CorsConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         
-        // Allow all origins for development - you can restrict to specific origins in production
+        // Allow specific origins for better security
         config.setAllowCredentials(true);
         config.addAllowedOrigin("http://localhost:5173"); // Vite default port
         config.addAllowedOrigin("http://localhost:3000"); // In case you're using a different port
@@ -33,6 +35,13 @@ public class CorsConfig {
         
         // Expose headers that might be needed by the client
         config.addExposedHeader("Authorization");
+        config.addExposedHeader("Set-Cookie"); // Expose Set-Cookie header for JWT auth
+        
+        // Enable passing cookies across origins
+        config.setAllowCredentials(true);
+
+        // Increase max age for preflight requests to reduce OPTIONS requests
+        config.setMaxAge(3600L);
         
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
