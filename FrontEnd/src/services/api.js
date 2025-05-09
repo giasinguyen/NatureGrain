@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
-const API_URL = 'http://localhost:8080/api';
+// Sử dụng biến môi trường nếu có, nếu không dùng giá trị mặc định
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
 // Tạo instance axios với cấu hình mặc định
 const api = axios.create({
@@ -9,15 +10,50 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true // Important: Allows cookies to be sent and received
+  withCredentials: true, // Important: Allows cookies to be sent and received
+  timeout: 10000, // Timeout after 10 seconds
 });
 
 // Biến để theo dõi có đang redirect hay không
 let isRedirecting = false;
 
+// Interceptor request để log và xử lý request
+api.interceptors.request.use(
+  (config) => {
+    // Log chi tiết request trong development mode
+    const isDev = import.meta.env.DEV || import.meta.env.VITE_ENV === 'development';
+    
+    if (isDev) {
+      console.log(`🚀 API Request [${config.method.toUpperCase()}]:`, config.url);
+      if (config.params && Object.keys(config.params).length) {
+        console.log('Request params:', config.params);
+      }
+      if (config.data) {
+        console.log('Request payload:', config.data);
+      }
+    }
+    
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 // Interceptor response để xử lý lỗi
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const isDev = import.meta.env.DEV || import.meta.env.VITE_ENV === 'development';
+    
+    if (isDev) {
+      console.log(`✅ API Response [${response.config.method.toUpperCase()}]:`, response.config.url);
+      if (response.data && typeof response.data === 'object') {
+        console.log('Response data:', response.data);
+      }
+    }
+    
+    return response;
+  },
   (error) => {
     const { response } = error;
     
@@ -153,18 +189,18 @@ export const blogService = {
     return api.get('/blog/newest?limit=3')
       .catch(error => {
         console.error('Error fetching latest blogs:', error);
-        // Solução alternativa em caso de falha: buscar blogs normais e filtrar
+        // Giải pháp thay thế trong trường hợp lỗi: lấy danh sách blog và lọc
         return api.get('/blog')
           .then(response => {
             const blogs = response.data || [];
-            // Ordenar por ID (presumindo que IDs mais altos são mais recentes)
+            // Sắp xếp theo ID (giả định rằng ID cao hơn là mới nhất)
             const sortedBlogs = [...blogs].sort((a, b) => b.id - a.id);
-            // Pegar apenas os 3 primeiros
+            // Chỉ lấy 3 blog đầu tiên
             return { data: sortedBlogs.slice(0, 3) };
           })
           .catch(secondError => {
-            console.error('Backup fetch for blogs also failed:', secondError);
-            return { data: [] }; // Retornar array vazio như último recurso
+            console.error('Fetch blog dự phòng cũng thất bại:', secondError);
+            return { data: [] }; // Trả về mảng rỗng như lựa chọn cuối cùng
           });
       });
   },

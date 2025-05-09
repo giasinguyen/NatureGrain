@@ -6,6 +6,7 @@ import {
 import { dashboardService } from '../../services/api';
 import SalesChart from '../../components/admin/SalesChart';
 import CategoryChart from '../../components/admin/CategoryChart';
+import AdminDebugger from '../../components/admin/AdminDebugger';
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
@@ -378,6 +379,11 @@ const Dashboard = () => {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Admin Debugger - chỉ hiển thị cho admin */}
+      <div className="mt-8">
+        <AdminDebugger />
       </div>
     </div>
   );

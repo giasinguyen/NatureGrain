@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # MariaDB service
+  db:
+    image: mariadb:latest
+    container_name: naturegrain_mariadb
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: admin
+      MYSQL_DATABASE: naturegrain
+      MYSQL_USER: naturegrain
+      MYSQL_PASSWORD: naturegrain123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      # Tải SQL từ file setup
+      - ./BackEnd/naturegrain.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend Spring Boot service
+  backend:
+    build: 
+      context: ./BackEnd
+      dockerfile: Dockerfile
+    container_name: naturegrain_backend
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/naturegrain
+      SPRING_DATASOURCE_USERNAME: naturegrain
+      SPRING_DATASOURCE_PASSWORD: naturegrain123
+      SPRING_PROFILES_ACTIVE: prod
+      JWT_SECRET: ${JWT_SECRET:-secure_jwt_secret_key_for_production}
+    ports:
+      - "8080:8080"
+
+  # Frontend Nginx service
+  frontend:
+    build:
+      context: ./FrontEnd
+      dockerfile: Dockerfile
+    container_name: naturegrain_frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  mariadb_data:
+    driver: local

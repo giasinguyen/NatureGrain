@@ -100,7 +100,7 @@ function AppContent() {
     <Routes>
       {/* Admin Routes */}
       <Route
-        path="/admin/*"
+        path="/admin"
         element={
           <AdminRoute>
             <Suspense
@@ -110,97 +110,197 @@ function AppContent() {
                 </div>
               }
             >
-              <AdminLayout>
-                <Routes>
-                  <Route path="/" element={<AdminDashboard />} />
-                  <Route path="products" element={<ProductsManagement />} />
-                  <Route path="categories" element={<CategoriesManagement />} />
-                  <Route path="orders" element={<OrdersManagement />} />
-                  {/* Add more admin routes as needed */}
-                  <Route path="*" element={<Navigate to="/admin" replace />} />
-                </Routes>
-              </AdminLayout>
+              <AdminLayout />
             </Suspense>
           </AdminRoute>
         }
-      />
+      >
+        <Route index element={<AdminDashboard />} />
+        <Route path="products" element={<ProductsManagement />} />
+        <Route path="categories" element={<CategoriesManagement />} />
+        <Route path="orders" element={<OrdersManagement />} />
+        {/* Add more admin routes as needed */}
+        <Route path="*" element={<Navigate to="/admin" replace />} />
+      </Route>
       
       {/* User Routes */}
-      <Route 
-        path="/*"
-        element={
-          <Layout>
-            <Suspense
-              fallback={
-                <div className="min-h-screen flex items-center justify-center">
-                  <LoadingSpinner size="lg" />
-                </div>
-              }
-            >
-              <Routes>
-                {/* Trang chủ */}
-                <Route path="/" element={<HomePage />} />
-
-                {/* Trang sản phẩm */}
-                <Route path="/products" element={<ProductsPage />} />
-                <Route path="/products/:id" element={<ProductDetailPage />} />
-
-                {/* Trang danh mục */}
-                <Route path="/categories" element={<CategoriesPage />} />
-                <Route path="/categories/:id" element={<CategoryDetailPage />} />
-
-                {/* Trang blog */}
-                <Route path="/blogs" element={<BlogsPage />} />
-                <Route path="/blog/:id" element={<BlogDetailPage />} />
-
-                {/* Trang tìm kiếm */}
-                <Route path="/search" element={<SearchPage />} />
-
-                {/* Trang giỏ hàng và thanh toán */}
-                <Route path="/cart" element={<CartPage />} />
-                <Route path="/checkout" element={
-                  <ProtectedRoute>
-                    <CheckoutPage />
-                  </ProtectedRoute>
-                } />
-
-                {/* Trang xác thực */}
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-
-                {/* Trang người dùng */}
-                <Route path="/user/profile" element={
-                  <ProtectedRoute>
-                    <ProfilePage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/user/orders" element={
-                  <ProtectedRoute>
-                    <OrdersPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/user/order/:id" element={
-                  <ProtectedRoute>
-                    <OrderDetailPage />
-                  </ProtectedRoute>
-                } />
-
-                {/* Redirect old profile paths to new ones */}
-                <Route path="/profile" element={<Navigate to="/user/profile" replace />} />
-                <Route path="/orders" element={<Navigate to="/user/orders" replace />} />
-                <Route path="/order/:id" element={<Navigate to="/user/order/:id" replace />} />
-
-                {/* Trang tĩnh */}
-                <Route path="/about" element={<AboutPage />} />
-                <Route path="/contact" element={<ContactPage />} />
-
-                {/* Trang 404 */}
-                <Route path="*" element={<NotFoundPage />} />
-              </Routes>
+      <Route path="/*" element={<Layout />}>
+        <Route 
+          index 
+          element={
+            <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><LoadingSpinner size="lg" /></div>}>
+              <HomePage />
             </Suspense>
-          </Layout>
-        }
-      />
+          } 
+        />
+
+        {/* Trang sản phẩm */}
+        <Route 
+          path="products" 
+          element={
+            <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><LoadingSpinner size="lg" /></div>}>
+              <ProductsPage />
+            </Suspense>
+          } 
+        />
+        <Route 
+          path="products/:id" 
+          element={
+            <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><LoadingSpinner size="lg" /></div>}>
+              <ProductDetailPage />
+            </Suspense>
+          } 
+        />
+
+        {/* Trang danh mục */}
+        <Route 
+          path="categories" 
+          element={
+            <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><LoadingSpinner size="lg" /></div>}>
+              <CategoriesPage />
+            </Suspense>
+          } 
+        />
+        <Route 
+          path="categories/:id" 
+          element={
+            <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><LoadingSpinner size="lg" /></div>}>
+              <CategoryDetailPage />
+            </Suspense>
+          } 
+        />
+
+        {/* Trang blog */}
+        <Route 
+          path="blogs" 
+          element={
+            <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><LoadingSpinner size="lg" /></div>}>
+              <BlogsPage />
+            </Suspense>
+          } 
+        />
+        <Route 
+          path="blog/:id" 
+          element={
+            <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><LoadingSpinner size="lg" /></div>}>
+              <BlogDetailPage />
+            </Suspense>
+          } 
+        />
+
+        {/* Trang tìm kiếm */}
+        <Route 
+          path="search" 
+          element={
+            <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><LoadingSpinner size="lg" /></div>}>
+              <SearchPage />
+            </Suspense>
+          } 
+        />
+
+        {/* Trang giỏ hàng và thanh toán */}
+        <Route 
+          path="cart" 
+          element={
+            <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><LoadingSpinner size="lg" /></div>}>
+              <CartPage />
+            </Suspense>
+          } 
+        />
+        <Route 
+          path="checkout" 
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><LoadingSpinner size="lg" /></div>}>
+                <CheckoutPage />
+              </Suspense>
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Trang xác thực */}
+        <Route 
+          path="login" 
+          element={
+            <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><LoadingSpinner size="lg" /></div>}>
+              <LoginPage />
+            </Suspense>
+          } 
+        />
+        <Route 
+          path="register" 
+          element={
+            <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><LoadingSpinner size="lg" /></div>}>
+              <RegisterPage />
+            </Suspense>
+          } 
+        />
+
+        {/* Trang người dùng */}
+        <Route 
+          path="user/profile" 
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><LoadingSpinner size="lg" /></div>}>
+                <ProfilePage />
+              </Suspense>
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="user/orders" 
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><LoadingSpinner size="lg" /></div>}>
+                <OrdersPage />
+              </Suspense>
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="user/order/:id" 
+          element={
+            <ProtectedRoute>
+              <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><LoadingSpinner size="lg" /></div>}>
+                <OrderDetailPage />
+              </Suspense>
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Redirect old profile paths to new ones */}
+        <Route path="profile" element={<Navigate to="/user/profile" replace />} />
+        <Route path="orders" element={<Navigate to="/user/orders" replace />} />
+        <Route path="order/:id" element={<Navigate to="/user/order/:id" replace />} />
+
+        {/* Trang tĩnh */}
+        <Route 
+          path="about" 
+          element={
+            <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><LoadingSpinner size="lg" /></div>}>
+              <AboutPage />
+            </Suspense>
+          } 
+        />
+        <Route 
+          path="contact" 
+          element={
+            <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><LoadingSpinner size="lg" /></div>}>
+              <ContactPage />
+            </Suspense>
+          } 
+        />
+
+        {/* Trang 404 */}
+        <Route 
+          path="*" 
+          element={
+            <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><LoadingSpinner size="lg" /></div>}>
+              <NotFoundPage />
+            </Suspense>
+          } 
+        />
+      </Route>
     </Routes>
   );
 }
