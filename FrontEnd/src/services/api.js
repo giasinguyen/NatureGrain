@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { toast } from 'react-toastify';
 
 const API_URL = 'http://localhost:8080/api';
 
@@ -19,26 +20,45 @@ api.interceptors.response.use(
     
     // Xử lý các mã lỗi phổ biến
     if (response) {
+      const errorMessage = response.data?.message || 'Có lỗi xảy ra';
+      
       switch (response.status) {
+        case 400:
+          // Bad Request
+          toast.error(`Yêu cầu không hợp lệ: ${errorMessage}`);
+          break;
         case 401:
           // Unauthorized - Đăng xuất và chuyển hướng đến trang đăng nhập
-          localStorage.removeItem('userId');
-          localStorage.removeItem('username');
-          window.location.href = '/login';
+          sessionStorage.removeItem('userInfo');
+          toast.error('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại');
+          // Tránh redirect nếu đã ở trang đăng nhập để tránh vòng lặp
+          if (!window.location.pathname.includes('/login')) {
+            setTimeout(() => {
+              window.location.href = '/login';
+            }, 2000);
+          }
           break;
         case 403:
           // Forbidden
-          console.error('Access forbidden');
+          toast.error('Bạn không có quyền truy cập tài nguyên này');
           break;
         case 404:
           // Not found
-          console.error('Resource not found');
+          toast.error(`Không tìm thấy: ${errorMessage}`);
+          break;
+        case 500:
+          // Server error
+          toast.error('Lỗi máy chủ, vui lòng thử lại sau');
           break;
         default:
           // Các lỗi khác
-          console.error('API error:', response.data);
+          toast.error(`Lỗi (${response.status}): ${errorMessage}`);
       }
+      
+      console.error('API error:', response.data);
     } else {
+      // Network error hoặc lỗi không có response
+      toast.error('Không thể kết nối đến máy chủ, vui lòng kiểm tra kết nối mạng');
       console.error('Network error:', error);
     }
     

@@ -14,87 +14,25 @@ export const AuthProvider = ({ children }) => {
     // Kiểm tra xem người dùng đã đăng nhập chưa
     const checkAuth = async () => {
       try {
-        // Check stored user info from sessionStorage first for quick UI display
-        const storedUserInfo = sessionStorage.getItem('userInfo');
-        
-        if (storedUserInfo) {
-          // Parse stored user info
-          const userInfo = JSON.parse(storedUserInfo);
+        // Fetch complete user details from server using the JWT cookie
+        const user = await authService.getCurrentUser();
+        if (user) {
+          const userInfo = {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            roles: user.roles
+          };
           
-          // Set complete user info from sessionStorage for immediate UI display
+          // Chỉ lưu thông tin cơ bản trong sessionStorage để tiện sử dụng
+          sessionStorage.setItem('userInfo', JSON.stringify(userInfo));
           setCurrentUser(userInfo);
-          
-          // Then fetch complete user details from server to validate session
-          try {
-            const user = await authService.getCurrentUser();
-            if (user) {
-              // Update with the latest data from server
-              const updatedUserInfo = {
-                id: user.id,
-                username: user.username,
-                email: user.email,
-                roles: user.roles
-              };
-              
-              // Update localStorage and sessionStorage
-              localStorage.setItem('userId', user.id);
-              localStorage.setItem('username', user.username);
-              sessionStorage.setItem('userInfo', JSON.stringify(updatedUserInfo));
-              
-              // Update state with the latest data
-              setCurrentUser(updatedUserInfo);
-            } else {
-              // Invalid session - clear storage
-              handleClearAuth();
-            }
-          } catch (serverError) {
-            // If server validation fails, still keep user logged in with stored data
-            console.warn('Server validation failed, using stored credentials:', serverError);
-            // We don't logout the user here, we keep using the stored info instead
-          }
         } else {
-          // Check for userId/username as fallback (backward compatibility)
-          const userId = localStorage.getItem('userId');
-          const username = localStorage.getItem('username');
-          
-          if (userId && username) {
-            // Set minimal user info first for better UX
-            setCurrentUser({
-              id: userId,
-              username: username,
-              loading: true // indicate we're still loading full details
-            });
-            
-            // Then fetch complete user details from server using the cookie
-            try {
-              const user = await authService.getCurrentUser();
-              if (user) {
-                const updatedUserInfo = {
-                  id: user.id,
-                  username: user.username,
-                  email: user.email,
-                  roles: user.roles
-                };
-                
-                // Update sessionStorage for better persistence
-                sessionStorage.setItem('userInfo', JSON.stringify(updatedUserInfo));
-                setCurrentUser(updatedUserInfo);
-              } else {
-                // Invalid session - clear storage
-                handleClearAuth();
-              }
-            } catch (error) {
-              // Clear auth if server validation completely fails
-              console.error('Authentication check failed:', error);
-              handleClearAuth();
-            }
-          } else {
-            // No stored authentication
-            setCurrentUser(null);
-          }
+          // Invalid session - clear storage
+          handleClearAuth();
         }
       } catch (error) {
-        console.error('Authentication check process failed:', error);
+        console.error('Authentication check failed:', error);
         handleClearAuth();
       } finally {
         setLoading(false);
@@ -106,8 +44,6 @@ export const AuthProvider = ({ children }) => {
 
   // Helper function to clear all auth data
   const handleClearAuth = () => {
-    localStorage.removeItem('userId');
-    localStorage.removeItem('username');
     sessionStorage.removeItem('userInfo');
     setCurrentUser(null);
   };
@@ -119,11 +55,6 @@ export const AuthProvider = ({ children }) => {
       
       // The backend returns user info directly in the response with JWT in cookies
       if (response && response.data) {
-        // Store user ID in localStorage for persistence
-        localStorage.setItem('userId', response.data.id);
-        localStorage.setItem('username', response.data.username);
-        
-        // Store complete user info for better persistence
         const userInfo = {
           id: response.data.id,
           username: response.data.username,
@@ -131,10 +62,9 @@ export const AuthProvider = ({ children }) => {
           roles: response.data.roles
         };
         
-        // Store complete user data in sessionStorage
+        // Chỉ lưu thông tin trong sessionStorage cho tiện sử dụng
         sessionStorage.setItem('userInfo', JSON.stringify(userInfo));
         
-        // Set the current user with the response data
         setCurrentUser(userInfo);
         
         toast.success('Đăng nhập thành công!');

@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.naturegrain.entity.Order;
 import com.naturegrain.entity.OrderDetail;
@@ -30,6 +31,7 @@ public class OrderServiceImpl implements OrderService {
     private UserRepository userRepository;
 
     @Override
+    @Transactional
     public void placeOrder(CreateOrderRequest request) {
         // Create the order
         Order order = new Order();
@@ -72,16 +74,18 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Order> getList() {
         return orderRepository.findAll(Sort.by("id").descending());
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Order> getOrderByUser(String username) {
-        User user = userRepository.findByUsername(username).orElseThrow(() -> new NotFoundException("Not Found User With Username:" + username));
+        User user = userRepository.findByUsername(username)
+            .orElseThrow(() -> new NotFoundException("Not Found User With Username:" + username));
 
         List<Order> orders = orderRepository.getOrderByUser(user.getId());
         return orders;  
     }
-
 }

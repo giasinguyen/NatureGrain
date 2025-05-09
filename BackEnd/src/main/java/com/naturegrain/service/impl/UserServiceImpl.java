@@ -6,10 +6,12 @@ import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.naturegrain.entity.ERole;
 import com.naturegrain.entity.Role;
 import com.naturegrain.entity.User;
+import com.naturegrain.exception.BadRequestException;
 import com.naturegrain.exception.NotFoundException;
 import com.naturegrain.model.request.ChangePasswordRequest;
 import com.naturegrain.model.request.CreateUserRequest;
@@ -31,81 +33,87 @@ public class UserServiceImpl implements UserService {
     private PasswordEncoder encoder;
 
     @Override
+    @Transactional
     public void register(CreateUserRequest request) {
-        // TODO Auto-generated method stub
         User user = new User();
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         user.setPassword(encoder.encode(request.getPassword()));
         Set<String> strRoles = request.getRole();
-          Set<Role> roles = new HashSet<>();
+        Set<Role> roles = new HashSet<>();
       
-          if (strRoles == null) {
+        if (strRoles == null) {
             Role userRole = roleRepository.findByName(ERole.ROLE_USER)
                 .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
             roles.add(userRole);
-          } else {
+        } else {
             strRoles.forEach(role -> {
-              switch (role) {
-              case "admin":
-                Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN)
-                    .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-                roles.add(adminRole);
-      
-                break;
-              case "mod":
-                Role modRole = roleRepository.findByName(ERole.ROLE_MODERATOR)
-                    .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-                roles.add(modRole);
-      
-                break;
-              default:
-                Role userRole = roleRepository.findByName(ERole.ROLE_USER)
-                    .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-                roles.add(userRole);
-              }
+                switch (role) {
+                case "admin":
+                    Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN)
+                        .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+                    roles.add(adminRole);
+          
+                    break;
+                case "mod":
+                    Role modRole = roleRepository.findByName(ERole.ROLE_MODERATOR)
+                        .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+                    roles.add(modRole);
+          
+                    break;
+                default:
+                    Role userRole = roleRepository.findByName(ERole.ROLE_USER)
+                        .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+                    roles.add(userRole);
+                }
             });
-          }
-          user.setRoles(roles);
-          userRepository.save(user);
+        }
+        user.setRoles(roles);
+        userRepository.save(user);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public User getUserByUsername(String username) {
-      // TODO Auto-generated method stub
-      User user = userRepository.findByUsername(username).orElseThrow(() -> new NotFoundException("Not Found User"));
-      return user;
+        User user = userRepository.findByUsername(username)
+            .orElseThrow(() -> new NotFoundException("Not Found User With Username: " + username));
+        return user;
     }
 
     @Override
+    @Transactional
     public User updateUser(UpdateProfileRequest request) {
-      // TODO Auto-generated method stub
-      User user = userRepository.findByUsername(request.getUsername()).orElseThrow(() -> new NotFoundException("Not Found User"));
-      user.setFirstname(request.getFirstname());
-      user.setLastname(request.getLastname());
-      user.setEmail(request.getEmail());
-      user.setCountry(request.getCountry());
-      user.setState(request.getState());
-      user.setAddress(request.getAddress());
-      user.setPhone(request.getPhone());
-      userRepository.save(user);
-      return user;
+        User user = userRepository.findByUsername(request.getUsername())
+            .orElseThrow(() -> new NotFoundException("Not Found User With Username: " + request.getUsername()));
+        user.setFirstname(request.getFirstname());
+        user.setLastname(request.getLastname());
+        user.setEmail(request.getEmail());
+        user.setCountry(request.getCountry());
+        user.setState(request.getState());
+        user.setAddress(request.getAddress());
+        user.setPhone(request.getPhone());
+        userRepository.save(user);
+        return user;
     }
 
     @Override
+    @Transactional
     public void changePassword(ChangePasswordRequest request) {
-      // TODO Auto-generated method stub
-      // User user = userRepository.findByUsername(request.getUsername()).orElseThrow(() -> new NotFoundException("Not Found User"));
+        User user = userRepository.findByUsername(request.getUsername())
+            .orElseThrow(() -> new NotFoundException("Not Found User With Username: " + request.getUsername()));
 
-      // if(encoder.encode(request.getOldPassword()) != user.getPassword()){
-      //   throw new BadRequestException("Old Passrword Not Same");
-      // }
-      // user.setPassword(encoder.encode(request.getNewPassword()));
-
-      // userRepository.save(user);
-      
+        // Kiểm tra mật khẩu cũ - phải dùng matches để so sánh với mật khẩu đã mã hóa
+        if (!encoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new BadRequestException("Old Password Is Incorrect");
+        }
+        
+        // Kiểm tra mật khẩu mới có giống mật khẩu cũ không
+        if (encoder.matches(request.getNewPassword(), user.getPassword())) {
+            throw new BadRequestException("New Password Must Be Different From Old Password");
+        }
+        
+        // Mã hóa và cập nhật mật khẩu mới
+        user.setPassword(encoder.encode(request.getNewPassword()));
+        userRepository.save(user);
     }
-
-
-    
 }
