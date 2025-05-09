@@ -254,11 +254,17 @@ const BlogDetailPage = () => {
     <div className="bg-white">
       {/* Header Image */}
       <div className="w-full h-64 sm:h-80 md:h-96 relative">
-        <img 
-          src={blog.image.url} 
-          alt={blog.title} 
-          className="w-full h-full object-cover" 
-        />
+        {blog.image ? (
+          <img 
+            src={blog.image.url} 
+            alt={blog.title} 
+            className="w-full h-full object-cover" 
+          />
+        ) : (
+          <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+            <span className="text-gray-400 text-xl">Sem imagem</span>
+          </div>
+        )}
         <div className="absolute inset-0 bg-black bg-opacity-30"></div>
         <div className="absolute bottom-0 left-0 p-6 w-full">
           <button 
@@ -278,18 +284,37 @@ const BlogDetailPage = () => {
           {/* Meta Information */}
           <div className="flex flex-wrap justify-between items-center py-6 border-b border-gray-200">
             <div className="flex items-center mb-4 md:mb-0">
-              <img 
-                src={blog.user.image} 
-                alt={blog.user.name} 
-                className="w-10 h-10 rounded-full object-cover"
-              />
-              <div className="ml-3">
-                <p className="font-medium text-gray-900">{blog.user.name}</p>
-                <div className="flex items-center text-sm text-gray-500">
-                  <CalendarIcon className="h-4 w-4 mr-1" />
-                  <span>{formatDate(blog.createAt)}</span>
+              {blog.user ? (
+                <>
+                  {blog.user.image ? (
+                    <img 
+                      src={blog.user.image} 
+                      alt={blog.user.name} 
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <UserCircleIcon className="w-10 h-10 text-gray-400" />
+                  )}
+                  <div className="ml-3">
+                    <p className="font-medium text-gray-900">{blog.user.name || blog.user.username || 'Autor'}</p>
+                    <div className="flex items-center text-sm text-gray-500">
+                      <CalendarIcon className="h-4 w-4 mr-1" />
+                      <span>{formatDate(blog.createAt)}</span>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center">
+                  <UserCircleIcon className="w-10 h-10 text-gray-400" />
+                  <div className="ml-3">
+                    <p className="font-medium text-gray-900">Autor desconhecido</p>
+                    <div className="flex items-center text-sm text-gray-500">
+                      <CalendarIcon className="h-4 w-4 mr-1" />
+                      <span>{formatDate(blog.createAt)}</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
             <div className="flex items-center">
               <button 
@@ -304,16 +329,20 @@ const BlogDetailPage = () => {
           
           {/* Tags */}
           <div className="py-4 flex flex-wrap gap-2">
-            {blog.tags.map(tag => (
-              <Link 
-                key={tag.id}
-                to={`/blogs?tag=${tag.name}`}
-                className="bg-green-50 text-green-600 hover:bg-green-100 px-3 py-1 rounded-full text-sm flex items-center"
-              >
-                <TagIcon className="h-3 w-3 mr-1" />
-                {tag.name}
-              </Link>
-            ))}
+            {blog.tags && blog.tags.length > 0 ? (
+              blog.tags.map((tag, idx) => (
+                <Link 
+                  key={tag.id || idx}
+                  to={`/blogs?tag=${tag.name}`}
+                  className="bg-green-50 text-green-600 hover:bg-green-100 px-3 py-1 rounded-full text-sm flex items-center"
+                >
+                  <TagIcon className="h-3 w-3 mr-1" />
+                  {tag.name}
+                </Link>
+              ))
+            ) : (
+              <span className="text-sm text-gray-500">Sem tags</span>
+            )}
           </div>
           
           {/* Blog Content */}
@@ -323,23 +352,29 @@ const BlogDetailPage = () => {
           />
           
           {/* Author Section */}
-          <div className="mt-12 bg-gray-50 rounded-lg p-6">
-            <div className="flex items-center">
-              <img 
-                src={blog.user.image} 
-                alt={blog.user.name} 
-                className="w-14 h-14 rounded-full object-cover"
-              />
-              <div className="ml-4">
-                <p className="font-bold text-gray-900">{blog.user.name}</p>
-                <p className="text-gray-600">Tác giả, chuyên gia dinh dưỡng</p>
+          {blog.user && (
+            <div className="mt-12 bg-gray-50 rounded-lg p-6">
+              <div className="flex items-center">
+                {blog.user.image ? (
+                  <img 
+                    src={blog.user.image} 
+                    alt={blog.user.name} 
+                    className="w-14 h-14 rounded-full object-cover"
+                  />
+                ) : (
+                  <UserCircleIcon className="w-14 h-14 text-gray-400" />
+                )}
+                <div className="ml-4">
+                  <p className="font-bold text-gray-900">{blog.user.name || blog.user.username || 'Autor'}</p>
+                  <p className="text-gray-600">Tác giả</p>
+                </div>
               </div>
+              <p className="mt-4 text-gray-700">
+                Người viết các bài hướng dẫn và chia sẻ kiến thức về dinh dưỡng, thực phẩm hữu cơ và
+                lối sống lành mạnh.
+              </p>
             </div>
-            <p className="mt-4 text-gray-700">
-              Người viết các bài hướng dẫn và chia sẻ kiến thức về dinh dưỡng, thực phẩm hữu cơ và
-              lối sống lành mạnh. Với hơn 5 năm kinh nghiệm trong lĩnh vực thực phẩm sạch.
-            </p>
-          </div>
+          )}
           
           {/* Related Posts */}
           {relatedBlogs.length > 0 && (
@@ -353,11 +388,17 @@ const BlogDetailPage = () => {
                     className="group"
                   >
                     <div className="aspect-video overflow-hidden rounded-lg mb-3">
-                      <img 
-                        src={relatedBlog.image.url} 
-                        alt={relatedBlog.title} 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                      />
+                      {relatedBlog.image ? (
+                        <img 
+                          src={relatedBlog.image.url} 
+                          alt={relatedBlog.title} 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                          <span className="text-gray-400">Sem imagem</span>
+                        </div>
+                      )}
                     </div>
                     <h3 className="font-bold text-gray-800 group-hover:text-green-600 transition-colors line-clamp-2">
                       {relatedBlog.title}

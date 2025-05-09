@@ -1,5 +1,6 @@
 package com.naturegrain.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -28,12 +29,14 @@ public class Blog {
     @Column(name = "content", columnDefinition = "TEXT")
     private String content;
     
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "image_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Image image;
     
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "password", "roles", "enabled", "authorities", "accountNonExpired", "accountNonLocked", "credentialsNonExpired"})
     private User user;
     
     @ManyToMany(fetch = FetchType.LAZY)

@@ -153,15 +153,26 @@ export const blogService = {
     return api.get('/blog/newest?limit=3')
       .catch(error => {
         console.error('Error fetching latest blogs:', error);
-        // Return empty array as fallback
-        return { data: [] };
+        // Solução alternativa em caso de falha: buscar blogs normais e filtrar
+        return api.get('/blog')
+          .then(response => {
+            const blogs = response.data || [];
+            // Ordenar por ID (presumindo que IDs mais altos são mais recentes)
+            const sortedBlogs = [...blogs].sort((a, b) => b.id - a.id);
+            // Pegar apenas os 3 primeiros
+            return { data: sortedBlogs.slice(0, 3) };
+          })
+          .catch(secondError => {
+            console.error('Backup fetch for blogs also failed:', secondError);
+            return { data: [] }; // Retornar array vazio như último recurso
+          });
       });
   },
   
   // Admin endpoints
   createBlog: (blogData) => api.post('/blog/create', blogData),
-  updateBlog: (id, blogData) => api.put(`/blog/${id}`, blogData),
-  deleteBlog: (id) => api.delete(`/blog/${id}`),
+  updateBlog: (id, blogData) => api.put(`/blog/update/${id}`, blogData),
+  deleteBlog: (id) => api.delete(`/blog/delete/${id}`),
 };
 
 // Order Services
