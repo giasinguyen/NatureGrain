@@ -215,8 +215,11 @@ export const aboutService = {
 
 // Dashboard Services (Admin)
 export const dashboardService = {
-  getStats: () => api.get('/admin/dashboard/stats'),
-  getSalesData: (period) => api.get(`/admin/dashboard/sales?period=${period}`),
+  getStats: () => api.get('/dashboard/stats'),
+  getRecentOrders: (limit = 5) => api.get(`/dashboard/recent-orders?limit=${limit}`),
+  getTopProducts: (limit = 5) => api.get(`/dashboard/top-products?limit=${limit}`),
+  getSalesChartData: (days = 7) => api.get(`/dashboard/sales-chart?days=${days}`),
+  getCategoryBreakdown: () => api.get('/dashboard/category-breakdown'),
 };
 
 export default api;

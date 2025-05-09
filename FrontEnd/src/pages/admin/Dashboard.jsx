@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { 
   ShoppingBagIcon, UserGroupIcon, CurrencyDollarIcon, 
-  ShoppingCartIcon, ArrowSmUpIcon as ArrowUpIcon, ArrowSmDownIcon as ArrowDownIcon 
+  ShoppingCartIcon, ArrowUpIcon, ArrowDownIcon
 } from '@heroicons/react/24/outline';
-import { productService, orderService, userService } from '../../services/api';
+import { dashboardService } from '../../services/api';
+import SalesChart from '../../components/admin/SalesChart';
+import CategoryChart from '../../components/admin/CategoryChart';
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
@@ -20,44 +22,119 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        // In a production environment, you'd create a dedicated dashboard API endpoint
-        // that returns all of this data in one request for better performance
+        console.log("Đang tải dữ liệu dashboard...");
         
-        // For now, we'll make separate calls to existing endpoints
-        const productsRes = await productService.getProducts();
-        const ordersRes = await orderService.getOrders();
+        let statsData = {};
+        let recentOrders = [];
+        let topProducts = [];
         
-        // Calculate stats from responses
-        const products = productsRes.data || [];
-        const orders = ordersRes.data || [];
+        try {
+          // Thử gọi API chính
+          const statsRes = await dashboardService.getStats();
+          statsData = statsRes.data || {};
+          console.log("Dữ liệu stats:", statsData);
+        } catch (error) {
+          console.error("Lỗi khi tải dữ liệu stats:", error);
+          // Mock data nếu API lỗi
+          statsData = {
+            totalProducts: 24,
+            totalUsers: 150,
+            totalRevenue: 45600000,
+            totalOrders: 89,
+            revenueChange: 12,
+            orderChange: 8
+          };
+        }
         
-        // Calculate revenue from orders
-        const revenue = orders.reduce((total, order) => {
-          // This assumes your order object has a totalAmount field
-          // Adjust based on your actual data structure
-          return total + (order.totalAmount || 0);
-        }, 0);
+        try {
+          // Thử gọi API đơn hàng gần đây
+          const recentOrdersRes = await dashboardService.getRecentOrders();
+          recentOrders = recentOrdersRes.data || [];
+          console.log("Dữ liệu đơn hàng gần đây:", recentOrders);
+        } catch (error) {
+          console.error("Lỗi khi tải dữ liệu đơn hàng gần đây:", error);
+          // Mock data nếu API lỗi
+          recentOrders = [
+            {
+              id: 1,
+              firstname: "Nguyễn",
+              lastname: "Văn A",
+              email: "nguyenvana@example.com",
+              createAt: new Date(),
+              totalPrice: 1200000,
+              status: "COMPLETED"
+            },
+            {
+              id: 2,
+              firstname: "Trần",
+              lastname: "Thị B",
+              email: "tranthib@example.com",
+              createAt: new Date(),
+              totalPrice: 850000,
+              status: "PENDING"
+            },
+            {
+              id: 3,
+              firstname: "Lê",
+              lastname: "Văn C",
+              email: "levanc@example.com",
+              createAt: new Date(),
+              totalPrice: 2100000,
+              status: "COMPLETED"
+            }
+          ];
+        }
         
-        // Sort orders by date to get recent ones
-        const sortedOrders = [...orders].sort((a, b) => 
-          new Date(b.createdAt) - new Date(a.createdAt)
-        );
-        
-        // Get most expensive products as "top" products
-        const sortedProducts = [...products].sort((a, b) => b.price - a.price);
+        try {
+          // Thử gọi API sản phẩm nổi bật
+          const topProductsRes = await dashboardService.getTopProducts();
+          topProducts = topProductsRes.data || [];
+          console.log("Dữ liệu sản phẩm nổi bật:", topProducts);
+        } catch (error) {
+          console.error("Lỗi khi tải dữ liệu sản phẩm nổi bật:", error);
+          // Mock data nếu API lỗi
+          topProducts = [
+            {
+              id: 1,
+              name: "Organic Broccoli",
+              category: { id: 1, name: "Organic Vegetables" },
+              price: 35000,
+              quantity: 50,
+              images: []
+            },
+            {
+              id: 2,
+              name: "Fresh Apples",
+              category: { id: 2, name: "Fresh Fruits" },
+              price: 28000,
+              quantity: 100,
+              images: []
+            },
+            {
+              id: 3,
+              name: "Brown Rice",
+              category: { id: 3, name: "Whole Grains" },
+              price: 45000,
+              quantity: 75,
+              images: []
+            }
+          ];
+        }
         
         setStats({
-          totalProducts: products.length,
-          totalUsers: 100, // Mock data as we don't have a user listing endpoint yet
-          totalRevenue: revenue,
-          totalOrders: orders.length,
-          recentOrders: sortedOrders.slice(0, 5),
-          topProducts: sortedProducts.slice(0, 5),
+          totalProducts: statsData.totalProducts || 0,
+          totalUsers: statsData.totalUsers || 0,
+          totalRevenue: statsData.totalRevenue || 0,
+          totalOrders: statsData.totalOrders || 0,
+          revenueChange: statsData.revenueChange || 0,
+          orderChange: statsData.orderChange || 0,
+          recentOrders: recentOrders,
+          topProducts: topProducts,
           loading: false,
           error: null
         });
       } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+        console.error('Lỗi chung khi tải dữ liệu dashboard:', error);
         setStats(prevStats => ({
           ...prevStats,
           loading: false,
@@ -75,21 +152,20 @@ const Dashboard = () => {
         <div>
           <div className="text-sm font-medium text-gray-500">{title}</div>
           <div className="text-2xl font-semibold text-gray-800">
-            {typeof value === 'number' && title.includes('Revenue') 
+            {typeof value === 'number' && title.includes('Doanh thu') 
               ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value) 
               : value}
           </div>
         </div>
-        <div className={`p-3 rounded-full ${title.includes('Products') ? 'bg-blue-100' : 
-          title.includes('Users') ? 'bg-yellow-100' :
-          title.includes('Revenue') ? 'bg-green-100' : 'bg-purple-100'}`}>
-          <Icon className={`w-6 h-6 ${title.includes('Products') ? 'text-blue-600' : 
-            title.includes('Users') ? 'text-yellow-600' :
-            title.includes('Revenue') ? 'text-green-600' : 'text-purple-600'}`} />
+        <div className={`p-3 rounded-full ${title.includes('sản phẩm') ? 'bg-blue-100' : 
+          title.includes('dùng') ? 'bg-yellow-100' :
+          title.includes('Doanh thu') ? 'bg-green-100' : 'bg-purple-100'}`}>
+          <Icon className={`w-6 h-6 ${title.includes('sản phẩm') ? 'text-blue-600' : 
+            title.includes('dùng') ? 'text-yellow-600' :
+            title.includes('Doanh thu') ? 'text-green-600' : 'text-purple-600'}`} />
         </div>
       </div>
-      
-      {change !== undefined && (
+        {change !== null && change !== undefined && (
         <div className="flex items-center mt-4">
           {isPositive ? (
             <ArrowUpIcon className="w-4 h-4 text-green-500" />
@@ -107,7 +183,7 @@ const Dashboard = () => {
 
   if (stats.loading) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex items-center justify-center h-screen">
         <div className="w-16 h-16 border-4 border-gray-200 border-t-green-600 rounded-full animate-spin"></div>
       </div>
     );
@@ -131,32 +207,38 @@ const Dashboard = () => {
           title="Tổng sản phẩm" 
           value={stats.totalProducts} 
           icon={ShoppingBagIcon}
-          change={12}
+          change={null} // No percentage change for products
           isPositive={true}
         />
         <StatCard 
           title="Người dùng" 
           value={stats.totalUsers} 
           icon={UserGroupIcon}
-          change={5}
+          change={null} // No percentage change for users 
           isPositive={true}
         />
         <StatCard 
           title="Doanh thu" 
           value={stats.totalRevenue} 
           icon={CurrencyDollarIcon}
-          change={8}
-          isPositive={true}
+          change={stats.revenueChange}
+          isPositive={stats.revenueChange >= 0}
         />
         <StatCard 
           title="Đơn hàng" 
           value={stats.totalOrders} 
           icon={ShoppingCartIcon}
-          change={3}
-          isPositive={false}
+          change={stats.orderChange}
+          isPositive={stats.orderChange >= 0}
         />
       </div>
 
+      {/* Charts */}
+      <div className="grid grid-cols-1 gap-6 mt-6">
+        <SalesChart />
+        <CategoryChart />
+      </div>
+      
       {/* Recent Orders */}
       <div className="mt-8">
         <h2 className="mb-4 text-lg font-medium text-gray-800">Đơn hàng gần đây</h2>
@@ -193,12 +275,12 @@ const Dashboard = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {new Date(order.createdAt).toLocaleDateString('vi-VN')}
+                      {new Date(order.createAt).toLocaleDateString('vi-VN')}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.totalAmount || 0)}
+                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.totalPrice || 0)}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

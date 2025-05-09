@@ -2,10 +2,18 @@ import { useState } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { 
-  HomeIcon, ShoppingBagIcon, UsersIcon, DocumentTextIcon, 
-  Cog6ToothIcon as CogIcon, ArrowRightOnRectangleIcon as LogoutIcon,
-  Bars3Icon as MenuIcon, XMarkIcon as XIcon, ChevronDownIcon,
-  ChartBarIcon, TagIcon, ShoppingCartIcon
+  HomeIcon, 
+  ShoppingBagIcon, 
+  TagIcon, 
+  ShoppingCartIcon, 
+  UserGroupIcon as UsersIcon, 
+  DocumentTextIcon, 
+  Cog6ToothIcon as CogIcon,
+  XMarkIcon as XIcon,
+  Bars3Icon as MenuIcon,
+  ChevronDownIcon,
+  ArrowRightOnRectangleIcon as LogoutIcon,
+  ChartBarIcon
 } from '@heroicons/react/24/outline';
 
 const AdminLayout = () => {

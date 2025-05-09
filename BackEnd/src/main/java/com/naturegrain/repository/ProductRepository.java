@@ -17,6 +17,9 @@ public interface ProductRepository extends JpaRepository<Product,Long> {
 
     @Query(value = "Select * from Product order by price limit 8 ",nativeQuery = true)
     List<Product> getListByPrice();
+    
+    // Top products by price for dashboard
+    List<Product> findTop5ByOrderByPriceDesc();
 
     @Query(value ="Select * from Product where category_id = :id order by rand() limit 4",nativeQuery = true)
     List<Product> findRelatedProduct(long id);
