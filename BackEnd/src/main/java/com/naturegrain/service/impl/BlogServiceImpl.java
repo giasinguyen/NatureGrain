@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
@@ -100,10 +101,8 @@ public class BlogServiceImpl implements BlogService {
 
     @Override
     public List<Blog> getListNewest(int limit) {
-        // TODO Auto-generated method stub
-        List<Blog> list = blogRepository.getListNewest(limit);
-        return list;
+        // Atualizado para usar PageRequest em vez do parâmetro limit na consulta SQL
+        PageRequest pageable = PageRequest.of(0, limit);
+        return blogRepository.getListNewest(pageable);
     }
-
-
 }

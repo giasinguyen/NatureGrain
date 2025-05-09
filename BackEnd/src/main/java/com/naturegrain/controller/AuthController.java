@@ -3,8 +3,11 @@ package com.naturegrain.controller;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
@@ -32,8 +35,10 @@ import io.swagger.v3.oas.annotations.Operation;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*",maxAge = 3600)
+// Cấu hình CORS tương thích với frontend
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000"}, allowCredentials = "true")
 public class AuthController {
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     @Autowired
     private AuthenticationManager authenticationManager;
@@ -56,6 +61,8 @@ public class AuthController {
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
         ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(userDetails);
+        
+        logger.info("User {} logged in successfully", userDetails.getUsername());
 
         List<String> roles = userDetails.getAuthorities().stream()
                 .map(item -> item.getAuthority())
@@ -66,7 +73,6 @@ public class AuthController {
                         userDetails.getUsername(),
                         userDetails.getEmail(),
                         roles));
-        // return ResponseEntity.ok(jwtCookie);
     }
 
     @PostMapping("/register")
@@ -82,15 +88,23 @@ public class AuthController {
     @Operation(summary="Đăng xuất")
     public ResponseEntity<?> logoutUser() {
       ResponseCookie cookie = jwtUtils.getCleanJwtCookie();
+      logger.info("User logged out successfully");
       return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie.toString())
-          .body(new MessageResponse("You've been logout!"));
+          .body(new MessageResponse("You've been logged out!"));
     }
 
     @GetMapping("/me")
     @Operation(summary="Get current authenticated user")
-    public ResponseEntity<?> getCurrentUser(Authentication authentication) {
+    public ResponseEntity<?> getCurrentUser(Authentication authentication, HttpServletRequest request) {
+        logger.debug("GET /api/auth/me được gọi");
+        
+        // Ghi log để debug các header và cookie
+        String authHeader = request.getHeader("Authorization");
+        logger.debug("Authorization header: {}", authHeader);
+        
         if (authentication != null && authentication.isAuthenticated()) {
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            logger.debug("User authenticated: {}", userDetails.getUsername());
             
             List<String> roles = userDetails.getAuthorities().stream()
                     .map(item -> item.getAuthority())
@@ -101,8 +115,9 @@ public class AuthController {
                     userDetails.getUsername(),
                     userDetails.getEmail(),
                     roles));
+        } else {
+            logger.warn("Yêu cầu đến /api/auth/me nhưng người dùng không được xác thực");
+            return ResponseEntity.status(401).body(new MessageResponse("Not authenticated"));
         }
-        
-        return ResponseEntity.status(401).body(new MessageResponse("Not authenticated"));
     }
 }

@@ -11,6 +11,6 @@ import com.naturegrain.entity.Category;
 @Repository
 public interface CategoryRepository extends JpaRepository<Category,Long> {
     
-    @Query("Select c from Category c where c.enable = true")
+    @Query("SELECT c FROM Category c WHERE c.enable = true")
     List<Category> findALLByEnabled();
 }

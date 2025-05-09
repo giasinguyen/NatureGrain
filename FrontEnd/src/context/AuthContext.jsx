@@ -9,37 +9,71 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
 
-  useEffect(() => {
-    // Kiểm tra xem người dùng đã đăng nhập chưa
-    const checkAuth = async () => {
-      try {
-        // Fetch complete user details from server using the JWT cookie
-        const user = await authService.getCurrentUser();
-        if (user) {
-          const userInfo = {
-            id: user.id,
-            username: user.username,
-            email: user.email,
-            roles: user.roles
-          };
-          
-          // Chỉ lưu thông tin cơ bản trong sessionStorage để tiện sử dụng
-          sessionStorage.setItem('userInfo', JSON.stringify(userInfo));
+  // Hàm kiểm tra trạng thái đăng nhập
+  const checkAuth = async (skipCache = false) => {
+    try {
+      setLoading(true);
+      
+      // Nếu không bỏ qua cache và có thông tin người dùng trong sessionStorage
+      if (!skipCache) {
+        const cachedUserInfo = sessionStorage.getItem('userInfo');
+        if (cachedUserInfo) {
+          const userInfo = JSON.parse(cachedUserInfo);
+          // Sử dụng cache trước để tránh màn hình trắng
           setCurrentUser(userInfo);
-        } else {
-          // Invalid session - clear storage
-          handleClearAuth();
         }
-      } catch (error) {
-        console.error('Authentication check failed:', error);
+      }
+      
+      // Luôn xác thực với server để đảm bảo thông tin người dùng là mới nhất
+      const user = await authService.getCurrentUser();
+      
+      if (user) {
+        const userInfo = {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          roles: user.roles
+        };
+        
+        // Cập nhật cache trong sessionStorage
+        sessionStorage.setItem('userInfo', JSON.stringify(userInfo));
+        setCurrentUser(userInfo);
+      } else {
+        // Nếu không có thông tin người dùng từ server, xóa cache
         handleClearAuth();
-      } finally {
-        setLoading(false);
+      }
+    } catch (error) {
+      console.error('Authentication check failed:', error);
+      // Chỉ xóa thông tin đăng nhập nếu lỗi 401 Unauthorized
+      if (error.response && error.response.status === 401) {
+        handleClearAuth();
+      }
+      // Giữ nguyên thông tin đăng nhập từ cache đối với các lỗi khác 
+      // (ví dụ: mất kết nối internet tạm thời)
+    } finally {
+      setLoading(false);
+      setAuthChecked(true);
+    }
+  };
+
+  // Kiểm tra xác thực khi component được mount
+  useEffect(() => {
+    checkAuth();
+    
+    // Thêm một listener để kiểm tra lại trạng thái đăng nhập sau khi tab trở nên active
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkAuth(true); // Bỏ qua cache khi tab trở lại
       }
     };
-
-    checkAuth();
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   // Helper function to clear all auth data
@@ -62,7 +96,7 @@ export const AuthProvider = ({ children }) => {
           roles: response.data.roles
         };
         
-        // Chỉ lưu thông tin trong sessionStorage cho tiện sử dụng
+        // Lưu thông tin trong sessionStorage
         sessionStorage.setItem('userInfo', JSON.stringify(userInfo));
         
         setCurrentUser(userInfo);
@@ -120,6 +154,11 @@ export const AuthProvider = ({ children }) => {
       handleClearAuth();
     });
   };
+  
+  // Hàm thử lại xác thực - hữu ích khi gặp lỗi 401
+  const retryAuth = async () => {
+    return checkAuth(true); // Bỏ qua cache khi thử lại xác thực
+  };
 
   const value = {
     currentUser,
@@ -127,7 +166,9 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    isAuthenticated: !!currentUser
+    retryAuth,
+    isAuthenticated: !!currentUser,
+    authChecked // Biến này giúp các component biết rằng đã hoàn tất kiểm tra xác thực
   };
 
   return (

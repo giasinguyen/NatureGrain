@@ -12,6 +12,9 @@ const api = axios.create({
   withCredentials: true // Important: Allows cookies to be sent and received
 });
 
+// Biến để theo dõi có đang redirect hay không
+let isRedirecting = false;
+
 // Interceptor response để xử lý lỗi
 api.interceptors.response.use(
   (response) => response,
@@ -30,12 +33,21 @@ api.interceptors.response.use(
         case 401:
           // Unauthorized - Đăng xuất và chuyển hướng đến trang đăng nhập
           sessionStorage.removeItem('userInfo');
-          toast.error('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại');
-          // Tránh redirect nếu đã ở trang đăng nhập để tránh vòng lặp
-          if (!window.location.pathname.includes('/login')) {
-            setTimeout(() => {
-              window.location.href = '/login';
-            }, 2000);
+          
+          // Tránh hiển thị nhiều thông báo và nhiều lần redirect
+          if (!isRedirecting) {
+            isRedirecting = true;
+            toast.error('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại');
+            
+            // Tránh redirect nếu đã ở trang đăng nhập để tránh vòng lặp
+            if (!window.location.pathname.includes('/login')) {
+              setTimeout(() => {
+                window.location.href = '/login';
+                isRedirecting = false;
+              }, 2000);
+            } else {
+              isRedirecting = false;
+            }
           }
           break;
         case 403:
@@ -78,9 +90,8 @@ export const authService = {
       return response.data;
     } catch (error) {
       console.error('Error getting current user:', error);
-      localStorage.removeItem('userId');
-      localStorage.removeItem('username');
-      return null;
+      // Không xóa session ở đây, để cho AuthContext xử lý
+      throw error; // Rethrow để AuthContext xử lý
     }
   }
 };

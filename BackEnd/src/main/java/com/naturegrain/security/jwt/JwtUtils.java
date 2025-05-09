@@ -44,14 +44,16 @@ public class JwtUtils {
   
     public ResponseCookie generateJwtCookie(UserDetailsImpl userPrincipal) {
       String jwt = generateTokenFromUsername(userPrincipal.getUsername());
-      // Cải thiện cấu hình cookie: thêm SameSite=Lax để hoạt động tốt hơn với cross-site
+      
+      // Tăng thời gian sống của cookie lên 7 ngày thay vì 1 ngày
       ResponseCookie cookie = ResponseCookie.from(jwtCookie, jwt)
           .path("/") // Đặt path thành "/" thay vì "/api" để cookie có thể truy cập từ tất cả các đường dẫn
-          .maxAge(24 * 60 * 60) // 1 ngày
+          .maxAge(7 * 24 * 60 * 60) // 7 ngày
           .httpOnly(true)
           .sameSite("Lax") // Cho phép cookie được gửi trong các yêu cầu điều hướng cross-site
           .build();
-      logger.info("Generated JWT cookie for user: {}", userPrincipal.getUsername());
+      
+      logger.info("Generated JWT cookie for user: {}, expires in 7 days", userPrincipal.getUsername());
       return cookie;
     }
   
@@ -100,10 +102,11 @@ public class JwtUtils {
     }
     
     public String generateTokenFromUsername(String username) {   
+      // Tăng thời gian sống của JWT token lên 7 ngày
       return Jwts.builder()
           .setSubject(username)
           .setIssuedAt(new Date())
-          .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
+          .setExpiration(new Date((new Date()).getTime() + (7L * 24 * 60 * 60 * 1000))) // 7 ngày
           .signWith(SignatureAlgorithm.HS512, jwtSecret)
           .compact();
     }
