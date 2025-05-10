@@ -1,8 +1,11 @@
 # NatureGrain - Cửa hàng Thực phẩm Hữu cơ
+# Nguyễn Trần Gia Sĩ
 
 [![React](https://img.shields.io/badge/Frontend-React-blue)](https://reactjs.org/)
 [![Spring Boot](https://img.shields.io/badge/Backend-Spring%20Boot-green)](https://spring.io/projects/spring-boot)
 [![MariaDB](https://img.shields.io/badge/Database-MariaDB-orange)](https://mariadb.org/)
+[![Docker](https://img.shields.io/badge/Deployment-Docker-blue)](https://www.docker.com/)
+[![Vite](https://img.shields.io/badge/Build-Vite-purple)](https://vitejs.dev/)
 
 ## 📝 Tổng quan
 
@@ -17,66 +20,106 @@ NatureGrain là dự án website thương mại điện tử chuyên về thực
 - **Blog và tin tức**: Cập nhật thông tin về lối sống lành mạnh, thực phẩm hữu cơ
 - **Quản lý đơn hàng**: Theo dõi trạng thái, lịch sử đơn hàng
 - **Giao diện thân thiện**: Thiết kế responsive trên đa dạng thiết bị
+- **Dashboard quản trị**: Giao diện quản lý toàn diện cho admin
+- **Hiệu suất tối ưu**: Caching API, lazy loading, và code splitting
 
 ## 🚀 Công nghệ sử dụng
 
 ### Frontend
-- **React**: Thư viện JavaScript để xây dựng giao diện người dùng
+- **React 19**: Thư viện JavaScript hiện đại để xây dựng giao diện người dùng
 - **Vite**: Công cụ build nhanh chóng và hiệu quả
-- **React Router**: Điều hướng trong ứng dụng
+- **React Router v7**: Điều hướng trong ứng dụng với nested routes
 - **Context API**: Quản lý trạng thái ứng dụng
-- **CSS/SCSS**: Styling
+- **TailwindCSS**: Framework CSS tiện lợi và linh hoạt
+- **Axios**: Thư viện xử lý HTTP requests
+- **React Toastify**: Hiển thị thông báo
+- **React Icons & Heroicons**: Thư viện icon phong phú
+- **Formik & Yup**: Xử lý form và validation
 
 ### Backend
 - **Spring Boot**: Framework Java để xây dựng ứng dụng
-- **Spring Security**: Xác thực và phân quyền
+- **Spring Security**: Xác thực và phân quyền với JWT
 - **Spring Data JPA**: Tương tác với cơ sở dữ liệu
 - **Hibernate**: ORM framework
-- **MySQL**: Cơ sở dữ liệu quan hệ
+- **MariaDB**: Cơ sở dữ liệu quan hệ
+- **Swagger/OpenAPI**: Tự động tạo tài liệu API
+- **Lombok**: Giảm code boilerplate
+
+### DevOps & CI/CD
+- **Docker**: Container hóa ứng dụng
+- **Docker Compose**: Triển khai multi-container
+- **Nginx**: Web server và reverse proxy
+- **Multi-stage builds**: Tối ưu hóa kích thước image
 
 ## 🛠️ Cài đặt và chạy dự án
 
-### Yêu cầu hệ thống
-- Node.js (>= 14.x)
-- Java Development Kit (JDK) 11 hoặc cao hơn
-- MySQL Server
+### Cách 1: Sử dụng Docker (Khuyến nghị)
+
+Cách đơn giản nhất để chạy dự án là sử dụng Docker Compose:
+
+```bash
+# Clone dự án
+git clone https://github.com/giasinguyen/NatureGrain.git
+cd NatureGrain
+
+# Chạy với Docker Compose
+docker-compose up -d
+```
+
+Sau khi hoàn tất, truy cập:
+- Frontend: http://localhost
+- Backend API: http://localhost:8080/api
+
+Xem thêm hướng dẫn chi tiết trong [DEPLOYMENT.md](DEPLOYMENT.md).
+
+### Cách 2: Cài đặt thủ công
+
+#### Yêu cầu hệ thống
+- Node.js (>= 16.x)
+- Java Development Kit (JDK) 17
+- MariaDB hoặc MySQL Server
 - Maven
 
-### Cài đặt Backend
+#### Cài đặt Backend
 1. Clone dự án:
-   ```
+   ```bash
    git clone https://github.com/giasinguyen/NatureGrain.git
-   cd naturegrain/Backend/ogani
+   cd NatureGrain/BackEnd
    ```
 
 2. Cấu hình cơ sở dữ liệu:
-   - Tạo database MySQL
-   - Cập nhật thông tin kết nối trong file `src/main/resources/application.properties`
+   - Tạo database MariaDB
+   - Cập nhật thông tin kết nối trong file `src/main/resources/application-dev.properties`
 
 3. Chạy script SQL để khởi tạo dữ liệu:
-   ```
-   mysql -u your_username -p your_database < oganisql.sql
+   ```bash
+   mysql -u your_username -p your_database < naturegrain.sql
    ```
 
 4. Build và chạy backend:
-   ```
+   ```bash
    ./mvnw spring-boot:run
    ```
    Máy chủ backend sẽ chạy tại địa chỉ: `http://localhost:8080`
 
-### Cài đặt Frontend
+#### Cài đặt Frontend
 1. Đi đến thư mục frontend:
-   ```
-   cd ../../FrontEnd
+   ```bash
+   cd ../FrontEnd
    ```
 
 2. Cài đặt dependencies:
-   ```
+   ```bash
    npm install
    ```
 
-3. Chạy ứng dụng:
+3. Tạo file .env.development:
+   ```bash
+   echo "VITE_API_URL=http://localhost:8080/api" > .env.development
    ```
+
+4. Chạy ứng dụng:
+   ```bash
    npm run dev
    ```
    Ứng dụng frontend sẽ chạy tại địa chỉ: `http://localhost:5173`
@@ -90,62 +133,61 @@ FrontEnd/
 ├── src/
 │   ├── assets/         # Hình ảnh, fonts
 │   ├── components/     # Components tái sử dụng
+│   │   ├── admin/      # Components cho trang quản trị
 │   │   ├── layout/     # Layout components (Header, Footer...)
 │   │   └── ui/         # UI components (Button, Modal...)
-│   ├── containers/     # Container components
-│   ├── context/        # React Context
-│   ├── hooks/          # Custom hooks
+│   ├── context/        # React Context API
+│   ├── hooks/          # Custom hooks (caching, form, error handling...)
 │   ├── pages/          # Components trang
-│   │   └── auth/       # Các trang liên quan đến xác thực
-│   │   └── user/       # Các trang trong khu vực người dùng
+│   │   ├── admin/      # Trang quản trị
+│   │   ├── auth/       # Trang xác thực
+│   │   └── user/       # Trang người dùng
 │   ├── services/       # Dịch vụ API
 │   └── utils/          # Utility functions
-└── App.jsx             # Component gốc
+└── .env.*              # Biến môi trường
 ```
 
 ### Backend
 ```
-Backend/ogani/
+Backend/
 ├── src/
 │   └── main/
 │       ├── java/
 │       │   └── com/
-│       │       └── example/
-│       │           └── ogani/
-│       │               ├── config/      # Cấu hình
-│       │               ├── controller/  # REST Controllers
-│       │               ├── dto/         # Data Transfer Objects
-│       │               ├── entity/      # Các Entity
-│       │               ├── exception/   # Xử lý ngoại lệ
-│       │               ├── repository/  # JPA Repositories
-│       │               ├── security/    # Cấu hình bảo mật
-│       │               └── service/     # Business Logic
+│       │       └── naturegrain/
+│       │           ├── config/      # Cấu hình
+│       │           ├── controller/  # REST Controllers
+│       │           ├── entity/      # Các Entity
+│       │           ├── exception/   # Xử lý ngoại lệ
+│       │           ├── model/       # DTOs và các model
+│       │           ├── repository/  # JPA Repositories
+│       │           ├── security/    # Bảo mật và JWT
+│       │           └── service/     # Business Logic
 │       └── resources/
-│           └── application.properties  # Cấu hình ứng dụng
-└── pom.xml                            # Cấu hình Maven
+│           └── application.properties  # Cấu hình chung
+│           └── config/                 # Cấu hình theo môi trường
+└── Dockerfile                         # Cấu hình Docker
 ```
+
+## 🔒 Tính năng bảo mật
+
+- **JWT Authentication**: Xác thực người dùng an toàn
+- **CORS Protection**: Bảo vệ khỏi Cross-Origin Request
+- **Password Encryption**: Mã hóa mật khẩu với BCrypt
+- **Role-Based Access Control**: Phân quyền người dùng
+- **Input Validation**: Kiểm tra đầu vào để ngăn chặn SQL Injection và XSS
+
+## ⚡ Performance Optimizations
+
+- **API Caching**: Caching kết quả API để giảm số lượng request
+- **Lazy Loading**: Tải các components khi cần thiết
+- **Retry Mechanism**: Tự động thử lại các API calls thất bại
+- **Debounce & Throttle**: Tối ưu các event handlers
+- **Error Boundary**: Ngăn chặn crash do lỗi component
 
 ## 📜 API Documentation
 
-### Authentication Endpoints
-- `POST /api/auth/login`: Đăng nhập
-- `POST /api/auth/register`: Đăng ký
-- `POST /api/auth/logout`: Đăng xuất
-
-### Product Endpoints
-- `GET /api/products`: Lấy danh sách sản phẩm
-- `GET /api/products/{id}`: Lấy chi tiết sản phẩm
-- `GET /api/categories`: Lấy danh sách danh mục
-- `GET /api/categories/{id}/products`: Lấy sản phẩm theo danh mục
-
-### Order Endpoints
-- `POST /api/orders`: Tạo đơn hàng mới
-- `GET /api/users/{username}/orders`: Lấy đơn hàng của người dùng
-- `GET /api/orders/{id}`: Lấy chi tiết đơn hàng
-
-### Blog Endpoints
-- `GET /api/blogs`: Lấy danh sách bài viết
-- `GET /api/blogs/{id}`: Lấy chi tiết bài viết
+API Documentation được tạo tự động bằng Swagger/OpenAPI và có sẵn tại `/api/swagger-ui.html` khi chạy backend.
 
 ## 👥 Tác giả
 
