@@ -7,12 +7,12 @@ services:
     container_name: naturegrain_mariadb
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: admin
-      MYSQL_DATABASE: naturegrain
-      MYSQL_USER: naturegrain
-      MYSQL_PASSWORD: naturegrain123
-    ports:
-      - "3306:3306"
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-admin}
+      MYSQL_DATABASE: ${DB_DATABASE:-naturegrain}
+      MYSQL_USER: ${DB_USER:-naturegrain}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-naturegrain123}    
+      ports:
+      - "${DB_PORT:-3306}:3306"
     volumes:
       - mariadb_data:/var/lib/mysql
       # Tải SQL từ file setup
@@ -32,15 +32,15 @@ services:
     restart: always
     depends_on:
       db:
-        condition: service_healthy
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/naturegrain
-      SPRING_DATASOURCE_USERNAME: naturegrain
-      SPRING_DATASOURCE_PASSWORD: naturegrain123
-      SPRING_PROFILES_ACTIVE: prod
-      JWT_SECRET: ${JWT_SECRET:-secure_jwt_secret_key_for_production}
-    ports:
-      - "8080:8080"
+        condition: service_healthy    
+        environment:
+      SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/${DB_DATABASE:-naturegrain}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-naturegrain}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-naturegrain123}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      JWT_SECRET: ${JWT_SECRET:-secure_jwt_secret_key_for_production}   
+      ports:
+      - "${BACKEND_PORT:-8080}:8080"
 
   # Frontend Nginx service
   frontend:
@@ -48,9 +48,9 @@ services:
       context: ./FrontEnd
       dockerfile: Dockerfile
     container_name: naturegrain_frontend
-    restart: always
+    restart: always    
     ports:
-      - "80:80"
+      - "${FRONTEND_PORT:-80}:80"
     depends_on:
       - backend
 
