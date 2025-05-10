@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.naturegrain.entity.User;
 import com.naturegrain.model.request.CreateUserRequest;
 import com.naturegrain.model.request.LoginRequest;
 import com.naturegrain.model.response.MessageResponse;
@@ -62,17 +63,27 @@ public class AuthController {
 
         ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(userDetails);
         
-        logger.info("User {} logged in successfully", userDetails.getUsername());
-
-        List<String> roles = userDetails.getAuthorities().stream()
+        logger.info("User {} logged in successfully", userDetails.getUsername());        List<String> roles = userDetails.getAuthorities().stream()
                 .map(item -> item.getAuthority())
                 .collect(Collectors.toList());
+        
+        // Lấy thêm thông tin người dùng từ database
+        User user = userService.getUserByUsername(userDetails.getUsername());
 
+        // Trả về đầy đủ thông tin người dùng
         return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
-                .body(new UserInfoResponse(userDetails.getId(),
+                .body(new UserInfoResponse(
+                        userDetails.getId(),
                         userDetails.getUsername(),
                         userDetails.getEmail(),
-                        roles));
+                        roles,
+                        user.getFirstname(),
+                        user.getLastname(),
+                        user.getAvatar(),
+                        user.getPhone(),
+                        user.getAddress(),
+                        user.getCountry(),
+                        user.getState()));
     }
 
     @PostMapping("/register")
@@ -101,8 +112,7 @@ public class AuthController {
         // Ghi log để debug các header và cookie
         String authHeader = request.getHeader("Authorization");
         logger.debug("Authorization header: {}", authHeader);
-        
-        if (authentication != null && authentication.isAuthenticated()) {
+          if (authentication != null && authentication.isAuthenticated()) {
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
             logger.debug("User authenticated: {}", userDetails.getUsername());
             
@@ -110,11 +120,22 @@ public class AuthController {
                     .map(item -> item.getAuthority())
                     .collect(Collectors.toList());
             
+            // Lấy thêm thông tin người dùng từ database
+            User user = userService.getUserByUsername(userDetails.getUsername());
+
+            // Trả về đầy đủ thông tin người dùng
             return ResponseEntity.ok(new UserInfoResponse(
                     userDetails.getId(),
                     userDetails.getUsername(),
                     userDetails.getEmail(),
-                    roles));
+                    roles,
+                    user.getFirstname(),
+                    user.getLastname(),
+                    user.getAvatar(),
+                    user.getPhone(),
+                    user.getAddress(),
+                    user.getCountry(),
+                    user.getState()));
         } else {
             logger.warn("Yêu cầu đến /api/auth/me nhưng người dùng không được xác thực");
             return ResponseEntity.status(401).body(new MessageResponse("Not authenticated"));

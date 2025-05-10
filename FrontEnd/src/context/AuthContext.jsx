@@ -10,7 +10,6 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [authChecked, setAuthChecked] = useState(false);
-
   // Hàm kiểm tra trạng thái đăng nhập
   const checkAuth = async (skipCache = false) => {
     try {
@@ -21,20 +20,33 @@ export const AuthProvider = ({ children }) => {
         const cachedUserInfo = sessionStorage.getItem('userInfo');
         if (cachedUserInfo) {
           const userInfo = JSON.parse(cachedUserInfo);
+          
+          // Kiểm tra xem avatar có phải là Data URL hay không
+          if (userInfo.avatar && !userInfo.avatar.startsWith('data:')) {
+            console.log('Avatar in cache is not a Data URL, will refresh from server');
+          } else {
+            console.log('Using cached user info with avatar');
+          }
+          
           // Sử dụng cache trước để tránh màn hình trắng
           setCurrentUser(userInfo);
         }
       }
-      
-      // Luôn xác thực với server để đảm bảo thông tin người dùng là mới nhất
+        // Luôn xác thực với server để đảm bảo thông tin người dùng là mới nhất
       const user = await authService.getCurrentUser();
-      
-      if (user) {
+        if (user) {
         const userInfo = {
           id: user.id,
           username: user.username,
           email: user.email,
-          roles: user.roles
+          roles: user.roles,
+          firstname: user.firstname,
+          lastname: user.lastname,
+          avatar: user.avatar,
+          phone: user.phone,
+          address: user.address,
+          country: user.country,
+          state: user.state
         };
         
         // Cập nhật cache trong sessionStorage
@@ -86,14 +98,20 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       const response = await authService.login(username, password);
-      
-      // The backend returns user info directly in the response with JWT in cookies
+        // The backend returns user info directly in the response with JWT in cookies
       if (response && response.data) {
         const userInfo = {
           id: response.data.id,
           username: response.data.username,
           email: response.data.email,
-          roles: response.data.roles
+          roles: response.data.roles,
+          firstname: response.data.firstname,
+          lastname: response.data.lastname,
+          avatar: response.data.avatar,
+          phone: response.data.phone,
+          address: response.data.address,
+          country: response.data.country,
+          state: response.data.state
         };
         
         // Lưu thông tin trong sessionStorage

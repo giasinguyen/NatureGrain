@@ -26,4 +26,7 @@ public class UpdateProfileRequest {
     private String address;
 
     private String phone;
+    
+    // Thêm trường avatar
+    private String avatar;
 }

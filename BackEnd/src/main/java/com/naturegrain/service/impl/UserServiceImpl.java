@@ -78,9 +78,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByUsername(username)
             .orElseThrow(() -> new NotFoundException("Not Found User With Username: " + username));
         return user;
-    }
-
-    @Override
+    }    @Override
     @Transactional
     public User updateUser(UpdateProfileRequest request) {
         User user = userRepository.findByUsername(request.getUsername())
@@ -92,6 +90,12 @@ public class UserServiceImpl implements UserService {
         user.setState(request.getState());
         user.setAddress(request.getAddress());
         user.setPhone(request.getPhone());
+        
+        // Cập nhật avatar nếu có
+        if (request.getAvatar() != null && !request.getAvatar().isEmpty()) {
+            user.setAvatar(request.getAvatar());
+        }
+        
         userRepository.save(user);
         return user;
     }

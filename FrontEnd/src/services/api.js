@@ -228,9 +228,9 @@ export const orderService = {
 // User Services
 export const userService = {
   // User facing endpoints
-  getUserProfile: () => api.get('/user/profile'),
-  updateUserProfile: (userData) => api.put('/user/profile', userData),
-  changePassword: (passwordData) => api.put('/user/change-password', passwordData),
+  getUserByUsername: (username) => api.get(`/user/?username=${username}`),
+  updateUserProfile: (userData) => api.put('/user/update', userData),
+  changePassword: (passwordData) => api.put('/user/password', passwordData),
   
   // Admin endpoints
   getAllUsers: () => api.get('/user/all'),
@@ -247,6 +247,57 @@ export const contactService = {
 // About Page Services
 export const aboutService = {
   getAboutPageData: () => api.get('/about')
+};
+
+// File Upload Services
+export const fileService = {
+  // Upload avatar - Sử dụng API mới để lưu vào database dưới dạng Base64
+  uploadAvatar: (file) => {
+    // Kiểm tra file
+    if (!file) {
+      console.error('No file provided to uploadAvatar');
+      return Promise.reject(new Error('No file provided'));
+    }
+    
+    console.log('Uploading avatar file:', file.name, file.type, file.size);
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // Debug log formData
+    console.log('FormData created with file:', file.name);
+    
+    // Vẫn giữ url cũ để tương thích, nhưng bên backend sẽ chuyển hướng sang API mới
+    return api.post('/files/avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    }).then(response => {
+      console.log('Avatar upload success:', response);
+      return response;
+    }).catch(error => {
+      console.error('Avatar upload error:', error);
+      throw error;
+    });
+  },
+  
+  // Upload product image
+  uploadProductImage: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    return api.post('/files/products', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+  },
+  
+  // Lấy URL avatar từ id người dùng
+  getAvatarUrl: (userId) => {
+    if (!userId) return null;
+    return `${API_URL}/avatar/${userId}`;
+  }
 };
 
 // Dashboard Services (Admin)
