@@ -1,30 +1,30 @@
-import { useState, useEffect } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { 
-  MagnifyingGlassIcon, 
-  ShoppingCartIcon, 
+import { useState, useEffect } from "react";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import {
+  MagnifyingGlassIcon,
+  ShoppingCartIcon,
   UserIcon,
   PhoneIcon,
   EnvelopeIcon,
   Bars3Icon,
   XMarkIcon,
   ChevronDownIcon,
-  Cog6ToothIcon
-} from '@heroicons/react/24/outline';
-import { useAuth } from '../../context/AuthContext';
-import { useCart } from '../../context/CartContext';
+  Cog6ToothIcon,
+} from "@heroicons/react/24/outline";
+import { useAuth } from "../../context/AuthContext";
+import { useCart } from "../../context/CartContext";
 
 const Header = () => {
   const { currentUser, logout } = useAuth();
   const { cartCount } = useCart();
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  
+
   // Kiểm tra nếu user là admin
-  const isAdmin = currentUser?.roles?.includes('ROLE_ADMIN');
+  const isAdmin = currentUser?.roles?.includes("ROLE_ADMIN");
 
   // Xử lý hiệu ứng thu gọn header khi cuộn trang
   useEffect(() => {
@@ -36,9 +36,9 @@ const Header = () => {
       }
     };
 
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener("scroll", handleScroll);
     };
   }, []);
 
@@ -47,14 +47,14 @@ const Header = () => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-      setSearchQuery('');
+      setSearchQuery("");
     }
   };
 
   // Xử lý đăng xuất
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate("/");
     setIsUserMenuOpen(false);
   };
 
@@ -66,19 +66,29 @@ const Header = () => {
           <div className="flex items-center text-sm space-x-4">
             <span className="flex items-center">
               <PhoneIcon className="w-4 h-4 mr-2" />
-              <a href="tel:+84977123456" className="hover:underline">034.899.6487</a>
+              <a href="tel:+84977123456" className="hover:underline">
+                034.899.6487
+              </a>
             </span>
             <span className="flex items-center">
               <EnvelopeIcon className="w-4 h-4 mr-2" />
-              <a href="mailto:info@naturegrain.com" className="hover:underline">giasinguyentran@gmail.com</a>
+              <a href="mailto:info@naturegrain.com" className="hover:underline">
+                giasinguyentran@gmail.com
+              </a>
             </span>
           </div>
           <div className="flex items-center text-sm space-x-4">
             {currentUser ? (
               <div className="flex items-center space-x-4">
-                <span>Xin chào, <strong>{currentUser.username || 'Khách hàng'}</strong></span>
+                <span>
+                  Xin chào,{" "}
+                  <strong>{currentUser.username || "Khách hàng"}</strong>
+                </span>
                 {isAdmin && (
-                  <Link to="/admin" className="flex items-center hover:underline text-white">
+                  <Link
+                    to="/admin"
+                    className="flex items-center hover:underline text-white"
+                  >
                     <Cog6ToothIcon className="w-4 h-4 mr-1" />
                     <span>Quản trị</span>
                   </Link>
@@ -86,8 +96,12 @@ const Header = () => {
               </div>
             ) : (
               <>
-                <Link to="/login" className="hover:underline">Đăng nhập</Link>
-                <Link to="/register" className="hover:underline">Đăng ký</Link>
+                <Link to="/login" className="hover:underline">
+                  Đăng nhập
+                </Link>
+                <Link to="/register" className="hover:underline">
+                  Đăng ký
+                </Link>
               </>
             )}
           </div>
@@ -95,14 +109,19 @@ const Header = () => {
       </div>
 
       {/* Main Header */}
-      <div className={`transition-all duration-300 ${isScrolled ? 'py-2' : 'py-4'}`}>
+      <div
+        className={`transition-all duration-300 ${
+          isScrolled ? "py-2" : "py-4"
+        }`}
+      >
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between">
-            {/* Logo */}
+          <div className="flex items-center justify-between">          
             <Link to="/" className="flex items-center">
-              <span className="ml-2 font-bold text-xl sm:text-2xl text-gray-800">
-                Nature<span className="text-green-600">Grain</span>
-              </span>
+              <img 
+                className="h-14 w-auto transition-all duration-300" 
+                src="/Naturegrain.png" 
+                alt="NatureGrain Logo"
+              />
             </Link>
 
             {/* Search bar - Desktop */}
@@ -126,12 +145,15 @@ const Header = () => {
 
             {/* Right side navigation - Desktop */}
             <div className="hidden lg:flex items-center space-x-6">
-              <Link to="/cart" className="flex items-center text-gray-700 hover:text-green-600 relative">
+              <Link
+                to="/cart"
+                className="flex items-center text-gray-700 hover:text-green-600 relative"
+              >
                 <ShoppingCartIcon className="w-6 h-6" />
                 <span className="ml-1">Giỏ hàng</span>
                 {cartCount > 0 && (
                   <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
-                    {cartCount > 99 ? '99+' : cartCount}
+                    {cartCount > 99 ? "99+" : cartCount}
                   </span>
                 )}
               </Link>
@@ -143,7 +165,9 @@ const Header = () => {
                   className="flex items-center text-gray-700 hover:text-green-600"
                 >
                   <UserIcon className="w-6 h-6" />
-                  <span className="ml-1">{currentUser ? 'Tài khoản' : 'Đăng nhập'}</span>
+                  <span className="ml-1">
+                    {currentUser ? "Tài khoản" : "Đăng nhập"}
+                  </span>
                   <ChevronDownIcon className="w-4 h-4 ml-1" />
                 </button>
 
@@ -206,11 +230,14 @@ const Header = () => {
 
             {/* Mobile menu button */}
             <div className="flex items-center lg:hidden">
-              <Link to="/cart" className="mr-4 text-gray-700 hover:text-green-600 relative">
+              <Link
+                to="/cart"
+                className="mr-4 text-gray-700 hover:text-green-600 relative"
+              >
                 <ShoppingCartIcon className="w-6 h-6" />
                 {cartCount > 0 && (
                   <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
-                    {cartCount > 99 ? '99+' : cartCount}
+                    {cartCount > 99 ? "99+" : cartCount}
                   </span>
                 )}
               </Link>
@@ -233,7 +260,9 @@ const Header = () => {
               <NavLink
                 to="/"
                 className={({ isActive }) =>
-                  `block py-3 font-medium hover:text-green-600 ${isActive ? 'text-green-600' : 'text-gray-700'}`
+                  `block py-3 font-medium hover:text-green-600 ${
+                    isActive ? "text-green-600" : "text-gray-700"
+                  }`
                 }
               >
                 Trang chủ
@@ -243,7 +272,9 @@ const Header = () => {
               <NavLink
                 to="/products"
                 className={({ isActive }) =>
-                  `block py-3 font-medium hover:text-green-600 ${isActive ? 'text-green-600' : 'text-gray-700'}`
+                  `block py-3 font-medium hover:text-green-600 ${
+                    isActive ? "text-green-600" : "text-gray-700"
+                  }`
                 }
               >
                 Sản phẩm
@@ -253,7 +284,9 @@ const Header = () => {
               <NavLink
                 to="/categories"
                 className={({ isActive }) =>
-                  `block py-3 font-medium hover:text-green-600 ${isActive ? 'text-green-600' : 'text-gray-700'}`
+                  `block py-3 font-medium hover:text-green-600 ${
+                    isActive ? "text-green-600" : "text-gray-700"
+                  }`
                 }
               >
                 Danh mục
@@ -263,7 +296,9 @@ const Header = () => {
               <NavLink
                 to="/blogs"
                 className={({ isActive }) =>
-                  `block py-3 font-medium hover:text-green-600 ${isActive ? 'text-green-600' : 'text-gray-700'}`
+                  `block py-3 font-medium hover:text-green-600 ${
+                    isActive ? "text-green-600" : "text-gray-700"
+                  }`
                 }
               >
                 Tin tức
@@ -273,7 +308,9 @@ const Header = () => {
               <NavLink
                 to="/about"
                 className={({ isActive }) =>
-                  `block py-3 font-medium hover:text-green-600 ${isActive ? 'text-green-600' : 'text-gray-700'}`
+                  `block py-3 font-medium hover:text-green-600 ${
+                    isActive ? "text-green-600" : "text-gray-700"
+                  }`
                 }
               >
                 Giới thiệu
@@ -283,7 +320,9 @@ const Header = () => {
               <NavLink
                 to="/contact"
                 className={({ isActive }) =>
-                  `block py-3 font-medium hover:text-green-600 ${isActive ? 'text-green-600' : 'text-gray-700'}`
+                  `block py-3 font-medium hover:text-green-600 ${
+                    isActive ? "text-green-600" : "text-gray-700"
+                  }`
                 }
               >
                 Liên hệ
@@ -306,7 +345,7 @@ const Header = () => {
                 <XMarkIcon className="w-6 h-6" />
               </button>
             </div>
-            
+
             {/* Search bar - Mobile */}
             <div className="p-4 border-b border-gray-200">
               <form onSubmit={handleSearch} className="relative">
@@ -325,12 +364,14 @@ const Header = () => {
                 </button>
               </form>
             </div>
-            
+
             {/* User account - Mobile */}
             <div className="p-4 border-b border-gray-200">
               {currentUser ? (
                 <div>
-                  <div className="font-medium mb-2">Xin chào, {currentUser.username}</div>
+                  <div className="font-medium mb-2">
+                    Xin chào, {currentUser.username}
+                  </div>
                   <div className="space-y-2">
                     <Link
                       to="/user/profile"
@@ -388,7 +429,7 @@ const Header = () => {
                 </div>
               )}
             </div>
-            
+
             {/* Navigation links - Mobile */}
             <nav className="p-4">
               <ul className="space-y-4">
@@ -396,7 +437,9 @@ const Header = () => {
                   <NavLink
                     to="/"
                     className={({ isActive }) =>
-                      `block font-medium ${isActive ? 'text-green-600' : 'text-gray-700'}`
+                      `block font-medium ${
+                        isActive ? "text-green-600" : "text-gray-700"
+                      }`
                     }
                     onClick={() => setIsMenuOpen(false)}
                   >
@@ -407,7 +450,9 @@ const Header = () => {
                   <NavLink
                     to="/products"
                     className={({ isActive }) =>
-                      `block font-medium ${isActive ? 'text-green-600' : 'text-gray-700'}`
+                      `block font-medium ${
+                        isActive ? "text-green-600" : "text-gray-700"
+                      }`
                     }
                     onClick={() => setIsMenuOpen(false)}
                   >
@@ -418,7 +463,9 @@ const Header = () => {
                   <NavLink
                     to="/categories"
                     className={({ isActive }) =>
-                      `block font-medium ${isActive ? 'text-green-600' : 'text-gray-700'}`
+                      `block font-medium ${
+                        isActive ? "text-green-600" : "text-gray-700"
+                      }`
                     }
                     onClick={() => setIsMenuOpen(false)}
                   >
@@ -429,7 +476,9 @@ const Header = () => {
                   <NavLink
                     to="/blogs"
                     className={({ isActive }) =>
-                      `block font-medium ${isActive ? 'text-green-600' : 'text-gray-700'}`
+                      `block font-medium ${
+                        isActive ? "text-green-600" : "text-gray-700"
+                      }`
                     }
                     onClick={() => setIsMenuOpen(false)}
                   >
@@ -440,7 +489,9 @@ const Header = () => {
                   <NavLink
                     to="/about"
                     className={({ isActive }) =>
-                      `block font-medium ${isActive ? 'text-green-600' : 'text-gray-700'}`
+                      `block font-medium ${
+                        isActive ? "text-green-600" : "text-gray-700"
+                      }`
                     }
                     onClick={() => setIsMenuOpen(false)}
                   >
@@ -451,7 +502,9 @@ const Header = () => {
                   <NavLink
                     to="/contact"
                     className={({ isActive }) =>
-                      `block font-medium ${isActive ? 'text-green-600' : 'text-gray-700'}`
+                      `block font-medium ${
+                        isActive ? "text-green-600" : "text-gray-700"
+                      }`
                     }
                     onClick={() => setIsMenuOpen(false)}
                   >
@@ -460,17 +513,19 @@ const Header = () => {
                 </li>
               </ul>
             </nav>
-            
+
             {/* Contact info - Mobile */}
             <div className="p-4 bg-gray-50 mt-auto">
               <div className="space-y-2 text-sm">
                 <div className="flex items-center">
                   <PhoneIcon className="w-4 h-4 mr-2 text-green-600" />
-                  <a href="tel:+84977123456">0977.123.456</a>
+                  <a href="tel:+84977123456">034,899.6487</a>
                 </div>
                 <div className="flex items-center">
                   <EnvelopeIcon className="w-4 h-4 mr-2 text-green-600" />
-                  <a href="mailto:info@naturegrain.com">info@naturegrain.com</a>
+                  <a href="mailto:giasinguyentran@gmail.com">
+                    giasinguyentran@gmail.com
+                  </a>
                 </div>
               </div>
             </div>

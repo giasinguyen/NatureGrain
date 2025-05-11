@@ -134,8 +134,14 @@ const RegisterPage = () => {
     <div className="bg-gray-50 min-h-screen py-12">
       <div className="container mx-auto px-4 max-w-2xl">
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="p-6 sm:p-8">
-            <div className="text-center mb-8">
+          <div className="p-6 sm:p-8">            <div className="text-center mb-8">
+              <div className="flex justify-center mb-4">
+                <img 
+                  src="/Naturegrain.png" 
+                  alt="NatureGrain Logo" 
+                  className="h-20 w-auto" 
+                />
+              </div>
               <h1 className="text-2xl font-bold text-gray-800">Đăng ký tài khoản</h1>
               <p className="text-gray-600 mt-2">
                 Tạo tài khoản để mua sắm dễ dàng hơn và nhận nhiều ưu đãi
