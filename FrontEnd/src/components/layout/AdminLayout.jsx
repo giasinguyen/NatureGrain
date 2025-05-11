@@ -11,9 +11,9 @@ import {
   Cog6ToothIcon as CogIcon,
   XMarkIcon as XIcon,
   Bars3Icon as MenuIcon,
-  ChevronDownIcon,
-  ArrowRightOnRectangleIcon as LogoutIcon,
+  ChevronDownIcon,  ArrowRightOnRectangleIcon as LogoutIcon,
   ChartBarIcon,
+  PresentationChartLineIcon,
 } from "@heroicons/react/24/outline";
 
 const AdminLayout = () => {
@@ -37,9 +37,9 @@ const AdminLayout = () => {
       </div>
     );
   }
-
   const navigation = [
     { name: "Dashboard", href: "/admin", icon: HomeIcon },
+    { name: "Phân tích", href: "/admin/analytics", icon: PresentationChartLineIcon },
     { name: "Sản phẩm", href: "/admin/products", icon: ShoppingBagIcon },
     { name: "Danh mục", href: "/admin/categories", icon: TagIcon },
     { name: "Đơn hàng", href: "/admin/orders", icon: ShoppingCartIcon },

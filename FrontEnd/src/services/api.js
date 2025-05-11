@@ -309,4 +309,43 @@ export const dashboardService = {
   getCategoryBreakdown: () => api.get('/dashboard/category-breakdown'),
 };
 
+// Analytics Services (Admin)
+export const analyticsService = {
+  // Basic analytics
+  getSalesTrends: (timeframe = 'daily', timespan = 30) => 
+    api.get(`/analytics/sales-trends?timeframe=${timeframe}&timespan=${timespan}`),
+  getUserGrowth: (days = 30) => api.get(`/analytics/user-growth?days=${days}`),
+  getCustomerRetention: () => api.get('/analytics/customer-retention'),
+  getProductPerformance: () => api.get('/analytics/product-performance'),
+  getOrderStatusDistribution: () => api.get('/analytics/order-status-distribution'),
+  
+  // Advanced analytics
+  getSalesByHour: () => api.get('/analytics/sales-by-hour'),
+  getCustomerInsights: () => api.get('/analytics/customer-insights'),
+  getSalesByDateRange: (startDate, endDate) => 
+    api.get(`/analytics/sales-by-date-range${startDate ? `?startDateStr=${startDate}${endDate ? `&endDateStr=${endDate}` : ''}` : ''}`),
+  getOrderProcessingTime: () => api.get('/analytics/order-processing-time'),
+  
+  // Export functionality
+  exportSalesReport: (days = 30, format = 'csv') => 
+    api.get(`/analytics/export-report?days=${days}&format=${format}`, { responseType: format === 'csv' ? 'blob' : 'json' }),
+};
+
+// Advanced Analytics Services (Admin)
+export const advancedAnalyticsService = {
+  // Customer Analysis
+  getRfmAnalysis: () => api.get('/advanced-analytics/rfm-analysis'),
+  getBasketAnalysis: (limit = 20) => api.get(`/advanced-analytics/basket-analysis?limit=${limit}`),
+  getFunnelAnalysis: () => api.get('/advanced-analytics/funnel-analysis'),
+  getUserCohortAnalysis: () => api.get('/advanced-analytics/user-cohort-analysis'),
+  getCustomerLifetimeValue: () => api.get('/advanced-analytics/customer-lifetime-value'),
+  
+  // Trend Analysis
+  getSeasonalTrends: (years = 2) => api.get(`/advanced-analytics/seasonal-trends?years=${years}`),
+  getCategoryPerformance: (startDate, endDate) => 
+    api.get(`/advanced-analytics/category-performance${startDate ? `?startDateStr=${startDate}${endDate ? `&endDateStr=${endDate}` : ''}` : ''}`),
+  getDayHourHeatmap: (days = 30) => api.get(`/advanced-analytics/day-hour-heatmap?days=${days}`),
+  getOrderCompletionRate: (days = 30) => api.get(`/advanced-analytics/order-completion-rate?days=${days}`),
+};
+
 export default api;

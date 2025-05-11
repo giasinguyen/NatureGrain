@@ -13,7 +13,9 @@ import javax.persistence.JoinTable;
 import javax.persistence.JoinColumn;
 import javax.persistence.Lob;
 import javax.persistence.ManyToMany;
+import javax.persistence.PrePersist;
 import javax.persistence.Table;
+import java.util.Date;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -63,6 +65,16 @@ public class User {
     private String verificationCode;
 
     private boolean enabled;
+    
+    @Column(name = "create_at")
+    private Date createAt;
+    
+    @PrePersist
+    protected void onCreate() {
+        if (createAt == null) {
+            createAt = new Date();
+        }
+    }
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "user_roles",joinColumns = @JoinColumn(name = "user_id"),inverseJoinColumns = @JoinColumn(name = "role_id"))

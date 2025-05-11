@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { 
   ShoppingBagIcon, UserGroupIcon, CurrencyDollarIcon, 
-  ShoppingCartIcon, ArrowUpIcon, ArrowDownIcon
+  ShoppingCartIcon, ArrowUpIcon, ArrowDownIcon,
+  ChartBarIcon, ChevronRightIcon, PresentationChartLineIcon
 } from '@heroicons/react/24/outline';
 import { dashboardService } from '../../services/api';
+import { Link } from 'react-router-dom';
 import SalesChart from '../../components/admin/SalesChart';
 import CategoryChart from '../../components/admin/CategoryChart';
+import { CustomerRetentionChart, OrderStatusDistributionChart } from '../../components/admin/AnalyticsCharts';
 import AdminDebugger from '../../components/admin/AdminDebugger';
 
 const Dashboard = () => {
@@ -197,10 +200,19 @@ const Dashboard = () => {
       </div>
     );
   }
-
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-semibold text-gray-800">Dashboard</h1>
+      <div className="mb-6 flex justify-between items-center">
+        <h1 className="text-2xl font-semibold text-gray-800">Dashboard</h1>
+        <Link 
+          to="/admin/analytics" 
+          className="flex items-center px-4 py-2 text-sm bg-green-500 hover:bg-green-600 text-white rounded-md transition-colors"
+        >
+          <PresentationChartLineIcon className="w-4 h-4 mr-2" />
+          Phân tích nâng cao
+          <ChevronRightIcon className="w-4 h-4 ml-1" />
+        </Link>
+      </div>
       
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -208,14 +220,14 @@ const Dashboard = () => {
           title="Tổng sản phẩm" 
           value={stats.totalProducts} 
           icon={ShoppingBagIcon}
-          change={null} // No percentage change for products
+          change={null} 
           isPositive={true}
         />
         <StatCard 
           title="Người dùng" 
           value={stats.totalUsers} 
           icon={UserGroupIcon}
-          change={null} // No percentage change for users 
+          change={null} 
           isPositive={true}
         />
         <StatCard 
@@ -234,10 +246,13 @@ const Dashboard = () => {
         />
       </div>
 
-      {/* Charts */}
+      {/* Main Charts */}
       <div className="grid grid-cols-1 gap-6 mt-6">
         <SalesChart />
-        <CategoryChart />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <CategoryChart />
+          <OrderStatusDistributionChart />
+        </div>
       </div>
       
       {/* Recent Orders */}

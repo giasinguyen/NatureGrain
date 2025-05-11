@@ -39,6 +39,7 @@ const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 
 // Admin pages
 const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
+const AnalyticsPage = lazy(() => import("./pages/admin/AnalyticsPage"));
 const ProductsManagement = lazy(() => import("./pages/admin/ProductsManagement"));
 const CategoriesManagement = lazy(() => import("./pages/admin/CategoriesManagement"));
 const OrdersManagement = lazy(() => import("./pages/admin/OrdersManagement"));
@@ -116,6 +117,7 @@ function AppContent() {
         }
       >
         <Route index element={<AdminDashboard />} />
+        <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="products" element={<ProductsManagement />} />
         <Route path="categories" element={<CategoriesManagement />} />
         <Route path="orders" element={<OrdersManagement />} />
