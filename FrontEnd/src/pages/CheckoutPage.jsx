@@ -70,12 +70,12 @@ const CheckoutPage = () => {
     try {
       setLoading(true);
       setError(null);
-      
-      // Format orderDetails as required by backend
+        // Format orderDetails as required by backend
       const orderDetails = cart.map(item => ({
         name: item.name,
         price: item.price,
-        quantity: item.quantity
+        quantity: item.quantity,
+        productId: item.id // Add product ID to link order detail with product
       }));
 
       // Create order object in the format expected by backend
@@ -98,14 +98,25 @@ const CheckoutPage = () => {
       console.log('Sending order data:', orderData);
       
       // Call API to create order using the correct endpoint
-      const response = await orderService.createOrder(orderData);
-      console.log('Order response:', response);
+      const response = await orderService.createOrder(orderData);      console.log('Order response:', response);
       
       // Handle successful order
-      if (response.status === 200) {
+      if (response && response.status === 200) {
         setOrderSuccess(true);
-        // For demo purposes, use a random ID since the backend may not return one
-        setOrderId(response.data.id || `ORD-${Math.floor(Math.random() * 10000)}`);
+        
+        // Get order ID from response or generate placeholder
+        const orderId = response.data && response.data.id 
+          ? response.data.id 
+          : `ORD-${Math.floor(Math.random() * 10000)}`;
+        
+        setOrderId(orderId);
+        
+        // Save order data to localStorage for reference
+        try {
+          localStorage.setItem(`order_${orderId}`, JSON.stringify(response.data));
+        } catch (err) {
+          console.warn('Failed to save order to localStorage:', err);
+        }
         
         // Clear cart
         clearCart();

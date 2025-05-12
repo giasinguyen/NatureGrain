@@ -338,14 +338,21 @@ export const advancedAnalyticsService = {
   getBasketAnalysis: (limit = 20) => api.get(`/advanced-analytics/basket-analysis?limit=${limit}`),
   getFunnelAnalysis: () => api.get('/advanced-analytics/funnel-analysis'),
   getUserCohortAnalysis: () => api.get('/advanced-analytics/user-cohort-analysis'),
+  getUserCohortData: () => api.get('/advanced-analytics/user-cohort-analysis'), // Alias for backward compatibility
   getCustomerLifetimeValue: () => api.get('/advanced-analytics/customer-lifetime-value'),
+  getCustomerInsights: () => api.get('/advanced-analytics/customer-insights'),
   
   // Trend Analysis
-  getSeasonalTrends: (years = 2) => api.get(`/advanced-analytics/seasonal-trends?years=${years}`),
+  getSeasonalTrends: (timeframe, year) => api.get(`/advanced-analytics/seasonal-trends?timeframe=${timeframe || 'monthly'}&year=${year || new Date().getFullYear()}`),
+  getSalesTrends: () => api.get('/advanced-analytics/sales-trends'),
   getCategoryPerformance: (startDate, endDate) => 
     api.get(`/advanced-analytics/category-performance${startDate ? `?startDateStr=${startDate}${endDate ? `&endDateStr=${endDate}` : ''}` : ''}`),
-  getDayHourHeatmap: (days = 30) => api.get(`/advanced-analytics/day-hour-heatmap?days=${days}`),
+  getDayHourHeatmap: (metric = 'orders') => api.get(`/advanced-analytics/day-hour-heatmap?metric=${metric}`),
   getOrderCompletionRate: (days = 30) => api.get(`/advanced-analytics/order-completion-rate?days=${days}`),
+  getOrderCompletionRates: (days = 30) => api.get(`/advanced-analytics/order-completion-rate?days=${days}`), // Alias for backward compatibility
+  getSalesByHour: () => api.get('/advanced-analytics/sales-by-hour'),
+  getOrderProcessingTime: () => api.get('/advanced-analytics/order-processing-time'),
+  getSalesByDateRange: (startDate, endDate) => api.get(`/advanced-analytics/sales-by-date?startDate=${startDate || ''}&endDate=${endDate || ''}`),
 };
 
 export default api;

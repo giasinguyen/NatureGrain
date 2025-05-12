@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { orderService } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'react-toastify';
+import { analyzeOrderDetails, debugOrderDetails } from '../../utils/orderDetailDebugger';
 import { 
   ArrowLeftIcon, 
   ShoppingBagIcon, 
@@ -12,29 +13,33 @@ import {
   PhoneIcon,
   MapPinIcon,
   ClipboardDocumentListIcon,
-  CreditCardIcon
+  CreditCardIcon,
+  BugAntIcon
 } from '@heroicons/react/24/outline';
 
 const OrderDetailPage = () => {
   const { id } = useParams();
-  const { currentUser, retryAuth, isAuthenticated, authChecked } = useAuth();
+  const { retryAuth, isAuthenticated, authChecked } = useAuth();
   const navigate = useNavigate();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [cancellingOrder, setCancellingOrder] = useState(false);
   const [retryAttempts, setRetryAttempts] = useState(0);
-
+  const [showDebugInfo, setShowDebugInfo] = useState(false);
+  
+  // Kiểm tra có phải môi trường development
+  const isDev = import.meta.env.DEV || import.meta.env.MODE === 'development';
   // Lưu trữ thông tin đơn hàng trong localStorage để tránh mất dữ liệu khi refresh
   const cacheKey = `order_${id}`;
   
-  const saveOrderToCache = (orderData) => {
+  const saveOrderToCache = useCallback((orderData) => {
     if (orderData) {
       localStorage.setItem(cacheKey, JSON.stringify(orderData));
     }
-  };
+  }, [cacheKey]);
   
-  const loadOrderFromCache = () => {
+  const loadOrderFromCache = useCallback(() => {
     const cachedOrder = localStorage.getItem(cacheKey);
     if (cachedOrder) {
       try {
@@ -44,10 +49,10 @@ const OrderDetailPage = () => {
       }
     }
     return null;
-  };
+  }, [cacheKey]);
 
   // Hàm fetch chi tiết đơn hàng
-  const fetchOrderDetails = async (showLoadingState = true) => {
+  const fetchOrderDetails = useCallback(async (showLoadingState = true) => {
     try {
       if (showLoadingState) {
         setLoading(true);
@@ -85,8 +90,16 @@ const OrderDetailPage = () => {
         setLoading(false);
       }
     }
-  };
-
+  }, [id, retryAttempts, retryAuth, saveOrderToCache]);
+  // Load từ cache ngay lập tức để tránh màn hình trống
+  useEffect(() => {
+    const cachedOrder = loadOrderFromCache();
+    if (cachedOrder) {
+      setOrder(cachedOrder);
+    }
+  }, [loadOrderFromCache]);
+  
+  // Main effect to fetch order data
   useEffect(() => {
     // Nếu đã hoàn thành kiểm tra xác thực
     if (authChecked) {
@@ -107,15 +120,7 @@ const OrderDetailPage = () => {
         }
       }
     }
-  }, [authChecked, isAuthenticated, id]);
-  
-  // Load từ cache ngay lập tức để tránh màn hình trống
-  useEffect(() => {
-    const cachedOrder = loadOrderFromCache();
-    if (cachedOrder) {
-      setOrder(cachedOrder);
-    }
-  }, []);
+  }, [authChecked, isAuthenticated, id, fetchOrderDetails, loadOrderFromCache, navigate]);
 
   // Format date
   const formatDate = (dateString) => {
@@ -128,10 +133,12 @@ const OrderDetailPage = () => {
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
   };
-
   // Get status badge color and text
   const getStatusBadge = (status) => {
-    switch (status) {
+    // Convert status to uppercase and handle null/undefined case
+    const normalizedStatus = (status || '').toUpperCase();
+    
+    switch (normalizedStatus) {
       case 'PENDING':
         return {
           text: 'Đang chờ xử lý',
@@ -140,7 +147,16 @@ const OrderDetailPage = () => {
           icon: <ShoppingBagIcon className="h-5 w-5 mr-1" />,
           description: 'Đơn hàng của bạn đang được xử lý'
         };
+      case 'PROCESSING':
+        return {
+          text: 'Đang xử lý',
+          bgColor: 'bg-blue-100',
+          textColor: 'text-blue-800',
+          icon: <ShoppingBagIcon className="h-5 w-5 mr-1" />,
+          description: 'Đơn hàng của bạn đang được chuẩn bị'
+        };
       case 'SHIPPING':
+      case 'SHIPPED':
         return {
           text: 'Đang giao hàng',
           bgColor: 'bg-blue-100',
@@ -164,9 +180,17 @@ const OrderDetailPage = () => {
           icon: <XCircleIcon className="h-5 w-5 mr-1" />,
           description: 'Đơn hàng đã bị hủy'
         };
+      case 'REFUNDED':
+        return {
+          text: 'Đã hoàn tiền',
+          bgColor: 'bg-purple-100',
+          textColor: 'text-purple-800',
+          icon: <XCircleIcon className="h-5 w-5 mr-1" />,
+          description: 'Đơn hàng đã được hoàn tiền'
+        };
       default:
         return {
-          text: status,
+          text: status || 'Không xác định',
           bgColor: 'bg-gray-100',
           textColor: 'text-gray-800',
           icon: null,
@@ -279,13 +303,12 @@ const OrderDetailPage = () => {
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
       </div>
     );
-  }
-
-  const status = getStatusBadge(order.status);
+  }  const status = getStatusBadge(order.status);
   const canCancel = order.status === 'PENDING';
 
   // Hiển thị banner thông báo nếu đang xem dữ liệu cache khi offline
   const isViewingCache = !isAuthenticated && order;
+  
   
   return (
     <div className="bg-gray-50 min-h-screen py-8">
@@ -314,19 +337,45 @@ const OrderDetailPage = () => {
             </div>
           </div>
         )}
-        
-        {/* Header with back button */}
+          {/* Header with back button */}
         <div className="mb-6">
-          <Link 
-            to="/user/orders" 
-            className="inline-flex items-center text-sm text-gray-600 hover:text-green-600"
-          >
-            <ArrowLeftIcon className="h-4 w-4 mr-1" />
-            Quay lại danh sách đơn hàng
-          </Link>
-          <h1 className="text-2xl font-bold text-gray-800 mt-2">Chi tiết đơn hàng #{order.id}</h1>
-          {loading && <span className="ml-2 text-sm text-gray-500">(Đang cập nhật...)</span>}
+          <div className="flex justify-between items-center">
+            <div>
+              <Link 
+                to="/user/orders" 
+                className="inline-flex items-center text-sm text-gray-600 hover:text-green-600"
+              >
+                <ArrowLeftIcon className="h-4 w-4 mr-1" />
+                Quay lại danh sách đơn hàng
+              </Link>
+              <h1 className="text-2xl font-bold text-gray-800 mt-2">Chi tiết đơn hàng #{order.id}</h1>
+              {loading && <span className="ml-2 text-sm text-gray-500">(Đang cập nhật...)</span>}
+            </div>
+            
+            {isDev && (
+              <button 
+                onClick={() => {
+                  debugOrderDetails(order);
+                  const analysis = analyzeOrderDetails(order);
+                  console.log('Order Analysis:', analysis);
+                  setShowDebugInfo(!showDebugInfo);
+                }}
+                className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm rounded-md bg-gray-100 hover:bg-gray-200"
+              >
+                <BugAntIcon className="h-4 w-4 mr-1" />
+                {showDebugInfo ? 'Ẩn debug' : 'Debug'}
+              </button>
+            )}
+          </div>
         </div>
+        
+        {/* Debug Info Panel */}
+        {isDev && showDebugInfo && (
+          <div className="bg-gray-100 border border-gray-300 rounded-lg p-4 mb-6 text-xs overflow-auto max-h-60">
+            <h3 className="font-bold mb-2">Debug Info:</h3>
+            <pre>{JSON.stringify(analyzeOrderDetails(order), null, 2)}</pre>
+          </div>
+        )}
 
         {/* Order status section */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -366,10 +415,9 @@ const OrderDetailPage = () => {
                 <div className="flex justify-between">
                   <span className="text-gray-500">Mã đơn hàng:</span>
                   <span className="font-medium">#{order.id}</span>
-                </div>
-                <div className="flex justify-between">
+                </div>                <div className="flex justify-between">
                   <span className="text-gray-500">Ngày đặt hàng:</span>
-                  <span>{formatDate(order.createdAt)}</span>
+                  <span>{formatDate(order.createAt)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Phương thức thanh toán:</span>
@@ -383,13 +431,12 @@ const OrderDetailPage = () => {
               <div className="flex items-center mb-4">
                 <MapPinIcon className="h-5 w-5 text-gray-500 mr-2" />
                 <h2 className="text-lg font-medium text-gray-900">Thông tin giao hàng</h2>
-              </div>
-              <div className="space-y-3 text-sm">
-                <p className="font-medium">{order.fullName || currentUser?.username}</p>
-                <p className="text-gray-600">{order.address}</p>
+              </div>              <div className="space-y-3 text-sm">
+                <p className="font-medium">{`${order.firstname || ''} ${order.lastname || ''}`}</p>
+                <p className="text-gray-600">{`${order.address || ''}, ${order.town || ''}, ${order.state || ''}, ${order.country || ''}`}</p>
                 <div className="flex items-center">
                   <PhoneIcon className="h-4 w-4 text-gray-400 mr-1" />
-                  <span>{order.phone}</span>
+                  <span>{order.phone || 'N/A'}</span>
                 </div>
               </div>
             </div>
@@ -399,26 +446,27 @@ const OrderDetailPage = () => {
               <div className="flex items-center mb-4">
                 <CreditCardIcon className="h-5 w-5 text-gray-500 mr-2" />
                 <h2 className="text-lg font-medium text-gray-900">Thanh toán</h2>
-              </div>
-              <div className="space-y-3 text-sm">
+              </div>              <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-500">Tổng tiền hàng:</span>
-                  <span>{formatCurrency(order.subtotal || 0)}</span>
+                  <span>
+                    {formatCurrency(order.orderDetails?.reduce((sum, item) => sum + (item.subTotal || (item.price * item.quantity)), 0) || 0)}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Phí vận chuyển:</span>
-                  <span>{formatCurrency(order.shippingFee || 0)}</span>
+                  <span>{formatCurrency(0)}</span>
                 </div>
                 {order.discount > 0 && (
                   <div className="flex justify-between">
                     <span className="text-gray-500">Giảm giá:</span>
-                    <span>-{formatCurrency(order.discount)}</span>
+                    <span>-{formatCurrency(order.discount || 0)}</span>
                   </div>
                 )}
                 <div className="border-t pt-3 mt-3">
                   <div className="flex justify-between font-medium">
                     <span>Tổng thanh toán:</span>
-                    <span className="text-green-600">{formatCurrency(order.totalAmount)}</span>
+                    <span className="text-green-600">{formatCurrency(order.totalPrice || 0)}</span>
                   </div>
                 </div>
               </div>
@@ -428,14 +476,13 @@ const OrderDetailPage = () => {
           {/* Order items */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">Sản phẩm đã mua</h2>
-              <div className="divide-y divide-gray-200">
-                {order.orderItems && order.orderItems.map((item, index) => (
+              <h2 className="text-lg font-medium text-gray-900 mb-4">Sản phẩm đã mua</h2>              <div className="divide-y divide-gray-200">
+                {order.orderDetails && order.orderDetails.map((item, index) => (
                   <div key={index} className="py-4 flex">
                     <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
                       <img
-                        src={item.product?.image || '/dummy.png'}
-                        alt={item.product?.name}
+                        src={item.product?.images?.[0]?.url || '/dummy.png'}
+                        alt={item.name}
                         className="h-full w-full object-cover object-center"
                       />
                     </div>
@@ -443,20 +490,19 @@ const OrderDetailPage = () => {
                       <div>
                         <div className="flex justify-between text-base font-medium text-gray-900">
                           <h3>
-                            <Link to={`/products/${item.product?.id}`}>
-                              {item.product?.name}
+                            <Link to={item.product ? `/products/${item.product.id}` : '#'}>
+                              {item.name}
                             </Link>
                           </h3>
                           <p className="ml-4">{formatCurrency(item.price)}</p>
-                        </div>
-                        {item.product?.weight && (
-                          <p className="mt-1 text-sm text-gray-500">{item.product.weight}</p>
+                        </div>                        {item.product?.description && (
+                          <p className="mt-1 text-sm text-gray-500">{item.product.description.substring(0, 50)}...</p>
                         )}
                       </div>
                       <div className="flex flex-1 items-end justify-between text-sm">
                         <p className="text-gray-500">Số lượng: {item.quantity}</p>
                         <p className="font-medium text-gray-900">
-                          {formatCurrency(item.price * item.quantity)}
+                          {formatCurrency(item.subTotal || (item.price * item.quantity))}
                         </p>
                       </div>
                     </div>

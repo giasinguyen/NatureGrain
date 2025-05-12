@@ -1,33 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { advancedAnalyticsService } from '../../services/api';
 import { ShoppingBagIcon } from '@heroicons/react/24/outline';
 import LoadingSpinner from '../ui/LoadingSpinner';
-
-// Custom hook for fetching analytics data
-const useAnalyticsData = (dataFetcher, defaultValue = null) => {
-  const [data, setData] = useState(defaultValue);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const response = await dataFetcher();
-        setData(response.data);
-      } catch (err) {
-        console.error("Error fetching analytics data:", err);
-        setError(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [dataFetcher]);
-
-  return { data, loading, error };
-};
+import useAnalyticsData from './hooks/useAnalyticsData';
 
 // Helper function to format currency
 const formatCurrency = (value) => {
@@ -39,9 +14,17 @@ const formatCurrency = (value) => {
 
 const BasketAnalysisChart = () => {
   const [limit, setLimit] = useState(20);
-  const { data, loading, error } = useAnalyticsData(
+  
+  // Memoize the fetcher function to prevent unnecessary re-renders
+  const fetchBasketAnalysis = useCallback(
     () => advancedAnalyticsService.getBasketAnalysis(limit),
-    []
+    [limit]
+  );
+  
+  const { data, loading, error } = useAnalyticsData(
+    fetchBasketAnalysis,
+    [],
+    [limit]
   );
 
   if (loading) return <LoadingSpinner />;

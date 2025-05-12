@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.naturegrain.entity.Order;
+import com.naturegrain.entity.OrderDetail;
 import com.naturegrain.model.request.CreateOrderRequest;
 import com.naturegrain.model.response.MessageResponse;
 import com.naturegrain.repository.OrderRepository;
@@ -59,15 +60,28 @@ public class OrderController {
     public ResponseEntity<List<Order>> getList(){
         List<Order> list = orderService.getList();
         return ResponseEntity.ok(list);
-    }
-
-    // Add endpoint to get order by ID
+    }    // Add endpoint to get order by ID
     @GetMapping("/{id}")
     @Operation(summary="Lấy thông tin chi tiết đơn hàng theo ID")
     public ResponseEntity<?> getOrderById(@PathVariable("id") Long id){
         Optional<Order> orderOpt = orderRepository.findById(id);
         if (orderOpt.isPresent()) {
-            return ResponseEntity.ok(orderOpt.get());
+            Order order = orderOpt.get();
+            
+            // Ensure product relationships are loaded
+            for (OrderDetail detail : order.getOrderDetails()) {
+                if (detail.getProduct() != null) {
+                    // Trigger loading of product data
+                    detail.getProduct().getId();
+                    
+                    // Load product images if available
+                    if (detail.getProduct().getImages() != null) {
+                        detail.getProduct().getImages().size();
+                    }
+                }
+            }
+            
+            return ResponseEntity.ok(order);
         } else {
             return ResponseEntity.notFound().build();
         }
@@ -106,5 +120,21 @@ public class OrderController {
     public ResponseEntity<?> placeOrder(@RequestBody CreateOrderRequest request){
         orderService.placeOrder(request);
         return ResponseEntity.ok(new MessageResponse("Order Placed Successfully!"));
+    }
+
+    @PostMapping("/update-product-associations")
+    @Operation(summary="Cập nhật liên kết sản phẩm cho các chi tiết đơn hàng")
+    public ResponseEntity<?> updateOrderDetailsProductAssociations() {
+        int updatedCount = orderService.updateOrderDetailsWithProductReferences();
+        return ResponseEntity.ok(new MessageResponse("Updated " + updatedCount + " order detail(s) with product associations"));
+    }
+
+    @PutMapping("/order-detail/{id}/product/{productId}")
+    @Operation(summary="Cập nhật liên kết sản phẩm cho một chi tiết đơn hàng cụ thể")
+    public ResponseEntity<?> associateOrderDetailWithProduct(
+            @PathVariable("id") Long orderDetailId,
+            @PathVariable("productId") Long productId) {
+        OrderDetail updatedDetail = orderService.associateProductWithOrderDetail(orderDetailId, productId);
+        return ResponseEntity.ok(updatedDetail);
     }
 }

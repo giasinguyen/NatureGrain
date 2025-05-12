@@ -19,14 +19,13 @@ public class CreateOrderDetailRequest {
     private String name;
 
     @NotNull(message="Giá sản phẩm rỗng")
-    @NotEmpty(message="Giá sản phẩm rỗng")
-    @Size(min=0,message ="Giá sản phẩm từ 0 trở lên")
     private long price;
 
     @NotNull(message = "Số lượng sản phẩm rỗng")
-    @NotEmpty(message = "Số lượng sản phẩm rỗng")
-    @Size(min = 1,message="Số lượng sản phẩm từ 1 trở lên")
     private int quantity;
+    
+    @NotNull(message = "ID sản phẩm rỗng")
+    private Long productId;
 
     private long subTotal;
 }

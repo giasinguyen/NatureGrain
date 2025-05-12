@@ -13,12 +13,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.naturegrain.entity.Order;
 import com.naturegrain.entity.OrderDetail;
+import com.naturegrain.entity.Product;
 import com.naturegrain.entity.User;
 import com.naturegrain.exception.NotFoundException;
 import com.naturegrain.model.request.CreateOrderDetailRequest;
 import com.naturegrain.model.request.CreateOrderRequest;
 import com.naturegrain.repository.OrderDetailRepository;
 import com.naturegrain.repository.OrderRepository;
+import com.naturegrain.repository.ProductRepository;
 import com.naturegrain.repository.UserRepository;
 import com.naturegrain.service.OrderService;
 
@@ -35,8 +37,9 @@ public class OrderServiceImpl implements OrderService {
     private UserRepository userRepository;
     
     @PersistenceContext
-    private EntityManager entityManager;
-
+    private EntityManager entityManager;    @Autowired
+    private ProductRepository productRepository;
+    
     @Override
     @Transactional
     public void placeOrder(CreateOrderRequest request) {
@@ -71,6 +74,14 @@ public class OrderServiceImpl implements OrderService {
             orderDetail.setQuantity(rq.getQuantity());
             orderDetail.setSubTotal(rq.getPrice() * rq.getQuantity());
             orderDetail.setOrder(order);
+            
+            // Link to the product entity
+            if(rq.getProductId() != null) {
+                Product product = productRepository.findById(rq.getProductId())
+                    .orElseThrow(() -> new NotFoundException("Not Found Product With Id: " + rq.getProductId()));
+                orderDetail.setProduct(product);
+            }
+            
             totalPrice += orderDetail.getSubTotal();
             orderDetailRepository.save(orderDetail);
         }
@@ -81,12 +92,20 @@ public class OrderServiceImpl implements OrderService {
         
         // Đảm bảo tất cả thay đổi được lưu và session được flush
         entityManager.flush();
-    }
-
-    @Override
+    }    @Override
     @Transactional(readOnly = true)
     public List<Order> getList() {
         List<Order> orders = orderRepository.findAll(Sort.by("id").descending());
+        
+        // Ensure product relationships are loaded for all order details
+        for (Order order : orders) {
+            for (OrderDetail detail : order.getOrderDetails()) {
+                if (detail.getProduct() != null) {
+                    // Trigger loading of product data
+                    detail.getProduct().getName();
+                }
+            }
+        }
         
         // Khởi tạo lazy collections để tránh Hibernate collection warnings và tránh lỗi LazyInitializationException
         for (Order order : orders) {
@@ -111,5 +130,43 @@ public class OrderServiceImpl implements OrderService {
         }
         
         return orders;  
+    }
+
+    @Override
+    @Transactional
+    public OrderDetail associateProductWithOrderDetail(Long orderDetailId, Long productId) {
+        OrderDetail orderDetail = orderDetailRepository.findById(orderDetailId)
+            .orElseThrow(() -> new NotFoundException("Not Found OrderDetail With ID: " + orderDetailId));
+            
+        Product product = productRepository.findById(productId)
+            .orElseThrow(() -> new NotFoundException("Not Found Product With ID: " + productId));
+            
+        orderDetail.setProduct(product);
+        return orderDetailRepository.save(orderDetail);
+    }
+
+    @Override
+    @Transactional
+    public int updateOrderDetailsWithProductReferences() {
+        int updatedCount = 0;
+        
+        // Get all order details without product associations
+        List<OrderDetail> detailsWithoutProduct = orderDetailRepository.findAll()
+            .stream()
+            .filter(detail -> detail.getProduct() == null && detail.getName() != null && !detail.getName().isEmpty())
+            .toList();
+            
+        for (OrderDetail detail : detailsWithoutProduct) {
+            // Try to find matching product by name
+            List<Product> matchingProducts = productRepository.searchProduct(detail.getName());
+            if (!matchingProducts.isEmpty()) {
+                // Use the first matching product
+                detail.setProduct(matchingProducts.get(0));
+                orderDetailRepository.save(detail);
+                updatedCount++;
+            }
+        }
+        
+        return updatedCount;
     }
 }

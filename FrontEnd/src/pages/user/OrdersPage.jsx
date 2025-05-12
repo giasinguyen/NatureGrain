@@ -9,12 +9,27 @@ const OrdersPage = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
   useEffect(() => {
     const fetchOrders = async () => {
       try {
         setLoading(true);
         const response = await orderService.getOrders();
+        
+        // Debug orders data
+        if (import.meta.env.DEV) {
+          console.group('Orders Data Debug');
+          console.log('Orders raw data:', response.data);
+          
+          // Check for key naming inconsistencies
+          if (response.data && response.data.length > 0) {
+            const firstOrder = response.data[0];
+            console.log('Order keys:', Object.keys(firstOrder));
+            console.log('Date value:', firstOrder.createAt || firstOrder.createdAt);
+            console.log('Total price value:', firstOrder.totalPrice || firstOrder.totalAmount);
+          }
+          console.groupEnd();
+        }
+        
         setOrders(response.data);
       } catch (err) {
         console.error('Error fetching orders:', err);
@@ -28,21 +43,30 @@ const OrdersPage = () => {
       fetchOrders();
     }
   }, [currentUser]);
-
   // Format date
   const formatDate = (dateString) => {
-    const options = { year: 'numeric', month: 'long', day: 'numeric' };
-    return new Date(dateString).toLocaleDateString('vi-VN', options);
+    if (!dateString) return 'N/A';
+    try {
+      const options = { year: 'numeric', month: 'long', day: 'numeric' };
+      return new Date(dateString).toLocaleDateString('vi-VN', options);
+    } catch (err) {
+      console.error('Error formatting date:', err);
+      return 'N/A';
+    }
   };
-
   // Format currency
   const formatCurrency = (amount) => {
+    if (amount === undefined || amount === null || isNaN(amount)) {
+      return '0 ₫';
+    }
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
   };
-
   // Get status badge color and text
   const getStatusBadge = (status) => {
-    switch (status) {
+    // Convert status to uppercase and handle null/undefined case
+    const normalizedStatus = (status || '').toUpperCase();
+    
+    switch (normalizedStatus) {
       case 'PENDING':
         return {
           text: 'Đang chờ xử lý',
@@ -50,7 +74,15 @@ const OrdersPage = () => {
           textColor: 'text-yellow-800',
           icon: <ShoppingBagIcon className="h-5 w-5 mr-1" />
         };
+      case 'PROCESSING':
+        return {
+          text: 'Đang xử lý',
+          bgColor: 'bg-blue-100',
+          textColor: 'text-blue-800',
+          icon: <ShoppingBagIcon className="h-5 w-5 mr-1" />
+        };
       case 'SHIPPING':
+      case 'SHIPPED':
         return {
           text: 'Đang giao hàng',
           bgColor: 'bg-blue-100',
@@ -71,9 +103,16 @@ const OrdersPage = () => {
           textColor: 'text-red-800',
           icon: <XCircleIcon className="h-5 w-5 mr-1" />
         };
+      case 'REFUNDED':
+        return {
+          text: 'Đã hoàn tiền',
+          bgColor: 'bg-purple-100',
+          textColor: 'text-purple-800',
+          icon: <XCircleIcon className="h-5 w-5 mr-1" />
+        };
       default:
         return {
-          text: status,
+          text: status || 'Không xác định',
           bgColor: 'bg-gray-100',
           textColor: 'text-gray-800',
           icon: null
@@ -170,12 +209,11 @@ const OrdersPage = () => {
                       <tr key={order.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">#{order.id}</div>
+                        </td>                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{formatDate(order.createAt)}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{formatDate(order.createdAt)}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{formatCurrency(order.totalAmount)}</div>
+                          <div className="text-sm font-medium text-gray-900">{formatCurrency(order.totalPrice)}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${status.bgColor} ${status.textColor}`}>

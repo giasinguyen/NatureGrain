@@ -37,10 +37,11 @@ public class OrderDetail {
     @JoinColumn(name = "order_id")
     @JsonBackReference // This complements @JsonManagedReference in Order class
     private Order order;
-      @ManyToOne(fetch = FetchType.LAZY)
+    
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id")
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-    private Product product; // Added to match database schema
+    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
+    private Product product; // Many OrderDetails can reference one Product
 
     private long subTotal;
 
