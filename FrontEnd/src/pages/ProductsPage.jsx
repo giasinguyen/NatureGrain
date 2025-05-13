@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { productService, categoryService } from '../services/api';
 import { useCart } from '../context/CartContext';
@@ -9,6 +9,7 @@ import LoadingSpinner from '../components/ui/LoadingSpinner';
 import Modal from '../components/ui/Modal';
 import { ShoppingCartIcon, HeartIcon, StarIcon } from '@heroicons/react/24/outline';
 import { StarIcon as StarSolidIcon } from '@heroicons/react/24/solid';
+import { getImageUrlWithCacheBuster, loadImageProgressively } from '../utils/imageUtils';
 
 const ProductsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -263,15 +264,36 @@ const ProductsPage = () => {
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Hình ảnh sản phẩm */}
-                        <div className="relative h-[300px] md:h-[400px] rounded-lg overflow-hidden">
+                        {/* Hình ảnh sản phẩm */}                        <div className="relative h-[300px] md:h-[400px] rounded-lg overflow-hidden">
                           <img 
-                            src={quickViewProduct.images && quickViewProduct.images.length > 0 
-                              ? `http://localhost:8080/photos/${quickViewProduct.images[0].name}` 
-                              : '/dummy.png'
-                            }
+                            ref={imageRef => {
+                              if (imageRef) {
+                                loadImageProgressively({
+                                  imgElement: imageRef,
+                                  src: {
+                                    url: quickViewProduct.images && quickViewProduct.images.length > 0 
+                                      ? `http://localhost:8080/photos/${quickViewProduct.images[0].name}` 
+                                      : null,
+                                    id: quickViewProduct.images && quickViewProduct.images.length > 0 
+                                      ? quickViewProduct.images[0]?.id 
+                                      : null,
+                                    options: { 
+                                      width: 600, 
+                                      height: 600,
+                                      quality: 'auto',
+                                      crop: 'fill' 
+                                    }
+                                  },
+                                  onSuccess: () => console.log(`Quick view image loaded successfully`),
+                                  onError: () => console.log(`Failed to load quick view image, using fallback`),
+                                  fallbackUrl: '/dummy.png'
+                                });
+                              }
+                            }}
                             alt={quickViewProduct.name}
                             className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                            loading="lazy"
+                            decoding="async"
                           />
                           
                           {/* Badge giảm giá */}

@@ -1,5 +1,6 @@
 package com.naturegrain.model.request;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import javax.validation.constraints.NotEmpty;
@@ -43,9 +44,6 @@ public class CreateProductRequest {
     @NotNull(message = "Danh mục rỗng")
     @NotEmpty(message = "Danh mục rỗng")
     @Schema(description = "ID của danh mục",example="1")
-    private long categoryId;
-
-    @NotNull(message="Ảnh sản phẩm rỗng")
-    @Schema(description="Mảng Id của hình ảnh",example="[1,2,3]")
-    private Set<Long> imageIds;
+    private long categoryId;    @Schema(description="Mảng Id của hình ảnh",example="[1,2,3]")
+    private Set<Long> imageIds = new HashSet<>();
 }

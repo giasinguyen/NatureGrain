@@ -3,7 +3,9 @@ package com.naturegrain.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -101,9 +103,8 @@ public class ProductController {
     public ResponseEntity<List<Product>> searchProduct(@RequestParam("keyword") String keyword){
         List<Product> list = productService.searchProduct(keyword);
         return ResponseEntity.ok(list);
-    }
-
-    @PostMapping("/create")
+    }    @PostMapping("/create")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary="Tạo mới sản phẩm")
     public ResponseEntity<Product> createProduct(@RequestBody CreateProductRequest request){
         Product product = productService.createProduct(request);
@@ -112,19 +113,32 @@ public class ProductController {
     }
 
     @PutMapping("/update/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary="Tìm sản phẩm bằng id và cập nhật sản phẩm đó")
-    public ResponseEntity<Product> updateProduct(@PathVariable long id,@RequestBody CreateProductRequest request){
-        Product product = productService.updateProduct(id, request);
-
-        return ResponseEntity.ok(product);
+    public ResponseEntity<?> updateProduct(@PathVariable long id, @RequestBody CreateProductRequest request){
+        try {
+            // Log incoming request data for debugging
+            System.out.println("Updating product " + id + " with imageIds: " + 
+                (request.getImageIds() != null ? request.getImageIds() : "null"));
+            
+            Product product = productService.updateProduct(id, request);
+            return ResponseEntity.ok(product);
+        } catch (Exception e) {
+            // Log the error and return a meaningful response
+            System.err.println("Error updating product " + id + ": " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new MessageResponse("Error updating product: " + e.getMessage()));
+        }
     }
 
     @DeleteMapping("/delete/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary="Xóa sản phẩm bằng id")
     public ResponseEntity<?> deleteProduct(@PathVariable long id){
         productService.deleteProduct(id);
 
-        return ResponseEntity.ok(new MessageResponse("Product is d  elete"));
+        return ResponseEntity.ok(new MessageResponse("Product is deleted"));
     }
 
 

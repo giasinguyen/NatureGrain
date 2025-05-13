@@ -10,6 +10,7 @@ import {
   HeartIcon as HeartSolidIcon,
   StarIcon as StarSolidIcon
 } from '@heroicons/react/24/solid';
+import { loadImageProgressively } from '../../utils/imageUtils';
 
 const ProductCard = ({
   product,
@@ -17,8 +18,7 @@ const ProductCard = ({
   onToggleWishlist = () => {},
   onQuickView = () => {},
   isInWishlist = false
-}) => {
-  const [isHovered, setIsHovered] = useState(false);
+}) => {  const [isHovered, setIsHovered] = useState(false);
   const [liked, setLiked] = useState(isInWishlist);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
@@ -69,6 +69,24 @@ const ProductCard = ({
     setTimeout(() => setRippleEffect({ active: false, x: 0, y: 0 }), 600);
   };
 
+  // Intersection Observer to check if card is visible
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        setIsVisible(true);
+        observer.disconnect();
+      }
+    }, { threshold: 0.1 });
+    
+    if (cardRef.current) {
+      observer.observe(cardRef.current);
+    }
+    
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
   if (!product) return null;
 
   const {
@@ -81,24 +99,7 @@ const ProductCard = ({
     discount = 0,
     rating = Math.floor(Math.random() * 2) + 4, // Giả lập rating 4-5 sao cho demo
     soldCount = Math.floor(Math.random() * 100) + 10 // Giả lập số lượng đã bán cho demo
-  } = product;
-
-  // Image handling - get image from backend
-  const getImageUrl = () => {
-    // Access image from product.images if it exists
-    if (product.images && product.images.length > 0) {
-      // Use the image name to access from static resources
-      return `http://localhost:8080/photos/${product.images[0].name}`;
-    }
-    
-    // Fallback to check if there's a specific image property
-    if (product.imageUrl) {
-      return product.imageUrl;
-    }
-    
-    // Final fallback to dummy image
-    return '/Naturegrain.png';
-  };
+  } = product;  // No longer needed as we're using loadImageProgressively directly
   
   const inStock = quantity > 0;
   const isOrganic = category?.name?.toLowerCase().includes('organic');
@@ -140,9 +141,8 @@ const ProductCard = ({
       return (
         <span key={index}>
           {starValue <= rating ? (
-            <StarSolidIcon className="h-3.5 w-3.5 text-yellow-400" />
-          ) : starValue - 0.5 <= rating ? (
-            <StarIcon className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400 fill-[50%]" />
+            <StarSolidIcon className="h-3.5 w-3.5 text-yellow-400" />          ) : starValue - 0.5 <= rating ? (
+            <StarIcon className="h-3.5 w-3.5 text-yellow-400" style={{ fill: "rgb(250 204 21)", fillOpacity: "50%" }} />
           ) : (
             <StarIcon className="h-3.5 w-3.5 text-yellow-400" />
           )}
@@ -154,7 +154,7 @@ const ProductCard = ({
   const cardStyle = {
     transform: isHovered ? `perspective(1000px) rotateX(${mousePosition.y}deg) rotateY(${mousePosition.x}deg)` : 'perspective(1000px) rotateX(0) rotateY(0)',
     transition: isHovered ? 'transform 0.1s ease' : 'transform 0.5s ease',
-  };
+  };  // No longer need handleImageError as we're using loadImageProgressively
 
   return (
     <div 
@@ -209,26 +209,49 @@ const ProductCard = ({
             <div className="absolute -inset-1 bg-white blur opacity-30 rounded-md"></div>
           </div>
         </div>
-      )}
-
-      {/* Ảnh sản phẩm */}
+      )}      {/* Ảnh sản phẩm */}
       <Link to={`/products/${id}`} className="block relative overflow-hidden pt-[100%]">
-        <img
-          src={getImageUrl()}
-          alt={name}
-          className={`absolute inset-0 w-full h-full object-cover transition-all duration-500
+        {/* Only load image when card is visible in viewport */}
+        {isVisible && (
+          <>
+            {/* Empty SVG placeholder first */}
+            <img
+              ref={imageRef => {
+                if (imageRef) {
+                  // Use progressive image loading when the ref is available
+                  loadImageProgressively({
+                    imgElement: imageRef,
+                    src: {
+                      product,
+                      options: { 
+                        width: 300, 
+                        quality: 'auto',
+                        crop: 'fill'
+                      }
+                    },
+                    onSuccess: () => setIsLoaded(true),
+                    onError: () => {
+                      console.log(`Failed to load image for ${name}, using fallback`);
+                      setIsLoaded(true);
+                    },
+                    fallbackUrl: '/dummy.png'
+                  });
+                }
+              }}
+              alt={name}
+              className={`absolute inset-0 w-full h-full object-cover transition-all duration-500
                       group-hover:scale-110 filter ${isHovered ? 'brightness-105' : 'brightness-100'}`}
-          onLoad={() => setIsLoaded(true)}
-          onError={(e) => {
-            e.target.src = '/dummy.png';
-            setIsLoaded(true);
-          }}
-        />
+              loading="lazy"
+              decoding="async"
+            />
+          </>
+        )}
         
         {/* Overlay gradient */}
         <div className={`absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 
                         transition-opacity duration-300 ${isHovered ? 'opacity-100' : ''}`}></div>
-          {/* Các nút action khi hover */}
+          
+        {/* Các nút action khi hover */}
         <div
           className={`absolute inset-0 flex items-center justify-center gap-3 transition-all duration-300 
                     ${isHovered ? 'opacity-100' : 'opacity-0'}`}
@@ -260,10 +283,10 @@ const ProductCard = ({
             onClick={handleAddToCart}
             className={`relative overflow-hidden bg-white p-2.5 rounded-full shadow-lg transition-all duration-300 
                       transform hover:scale-110 hover:-translate-y-1 ${
-              inStock ? 'hover:bg-green-50' : 'opacity-60 cursor-not-allowed'
-            }`}
-            title={inStock ? "Thêm vào giỏ hàng" : "Hết hàng"}
+                        inStock ? 'hover:bg-gray-100' : 'opacity-50 cursor-not-allowed'
+                      }`}
             disabled={!inStock}
+            title={inStock ? "Thêm vào giỏ hàng" : "Sản phẩm hết hàng"}
             style={{animationDelay: '0.3s'}}
           >
             <ShoppingCartIcon className="h-5 w-5 text-gray-700" />
@@ -320,30 +343,18 @@ const ProductCard = ({
             )}
           </div>
           
+          {/* Quick add to cart button */}
           <button
             onClick={handleAddToCart}
-            className={`relative overflow-hidden text-sm font-medium rounded-full px-4 py-1.5 transition-all
-              ${inStock
-                ? 'bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg active:shadow-sm'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
             disabled={!inStock}
+            className={`p-2 rounded-full ${
+              inStock
+                ? 'bg-green-50 text-green-600 hover:bg-green-100 transition-colors'
+                : 'bg-gray-50 text-gray-400 cursor-not-allowed'
+            }`}
+            title={inStock ? "Thêm vào giỏ hàng" : "Sản phẩm hết hàng"}
           >
-            <div className="flex items-center gap-1">
-              <ShoppingCartIcon className="h-3.5 w-3.5" />
-              <span>{inStock ? 'Thêm vào giỏ' : 'Hết hàng'}</span>
-            </div>
-            {rippleEffect.active && (
-              <span 
-                className="absolute rounded-full bg-white/25 animate-ripple" 
-                style={{ 
-                  top: rippleEffect.y - 50,
-                  left: rippleEffect.x - 50,
-                  width: 100,
-                  height: 100
-                }}
-              />
-            )}
+            <ShoppingCartIcon className="w-4 h-4" />
           </button>
         </div>
       </div>

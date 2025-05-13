@@ -32,6 +32,11 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
+    // Constructor to create a User with only an ID
+    public User(Long id) {
+        this.id = id;
+    }
+    
     @Column(name="username",unique = true)
     private String username;
 

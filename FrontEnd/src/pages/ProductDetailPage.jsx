@@ -18,6 +18,7 @@ import { productService } from '../services/api';
 import { useCart } from '../context/CartContext';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import ProductCard from '../components/ui/ProductCard';
+import { getImageUrlWithCacheBuster, loadImageProgressively } from '../utils/imageUtils';
 
 const ProductDetailPage = () => {
   const { id } = useParams();
@@ -171,12 +172,11 @@ const ProductDetailPage = () => {
   
   // Determine product images
   const productImages = [];
-  
-  // Try to get images from the product
+    // Try to get images from the product with cache busting to prevent ERR_CONTENT_LENGTH_MISMATCH errors
   if (product.images && product.images.length > 0) {
-    // Map image objects to URLs using the static resource path
+    // Map image objects to URLs with cache busting to prevent browser caching issues
     productImages.push(...product.images.map(image => 
-      `http://localhost:8080/photos/${image.name}`
+      getImageUrlWithCacheBuster(`http://localhost:8080/photos/${image.name}`)
     ));
   } else {
     // Use a default image if no images are available
@@ -206,16 +206,35 @@ const ProductDetailPage = () => {
         <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-6">
             {/* Product Images */}
-            <div>
-              <div className="mb-4 aspect-square rounded-lg overflow-hidden bg-gray-100">
+            <div>              <div className="mb-4 aspect-square rounded-lg overflow-hidden bg-gray-100">
                 <img 
-                  src={productImages[selectedImage]}
+                  ref={imageRef => {
+                    if (imageRef) {
+                      loadImageProgressively({
+                        imgElement: imageRef,
+                        src: {
+                          url: product.images && product.images.length > 0 
+                            ? `http://localhost:8080/photos/${product.images[selectedImage]?.name}` 
+                            : null,
+                          id: product.images && product.images.length > 0 
+                            ? product.images[selectedImage]?.id 
+                            : null,
+                          options: { 
+                            width: 600, 
+                            quality: 'auto',
+                            crop: 'fill' 
+                          }
+                        },
+                        onSuccess: () => console.log(`Main product image loaded successfully`),
+                        onError: () => console.log(`Failed to load main product image, using fallback`),
+                        fallbackUrl: '/dummy.png'
+                      });
+                    }
+                  }}
                   alt={product.name}
                   className="w-full h-full object-contain"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = '/dummy.png';
-                  }}
+                  loading="eager"
+                  decoding="async"
                 />
               </div>
               
@@ -225,16 +244,33 @@ const ProductDetailPage = () => {
                     <button
                       key={index}
                       className={`w-20 h-20 rounded-md overflow-hidden border-2 ${selectedImage === index ? 'border-green-500' : 'border-gray-200'}`}
-                      onClick={() => setSelectedImage(index)}
-                    >
-                      <img 
-                        src={image} 
+                      onClick={() => setSelectedImage(index)}                    >                      <img 
+                        ref={imageRef => {
+                          if (imageRef) {
+                            loadImageProgressively({
+                              imgElement: imageRef,
+                              src: {
+                                url: product.images && product.images.length > index 
+                                  ? `http://localhost:8080/photos/${product.images[index]?.name}` 
+                                  : null,
+                                id: product.images && product.images.length > index 
+                                  ? product.images[index]?.id 
+                                  : null,
+                                options: { 
+                                  width: 80, 
+                                  height: 80,
+                                  quality: 'auto',
+                                  crop: 'fill' 
+                                }
+                              },
+                              fallbackUrl: '/dummy.png'
+                            });
+                          }
+                        }}
                         alt={`${product.name} - Ảnh ${index + 1}`}
                         className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = '/dummy.png';
-                        }}
+                        loading="lazy"
+                        decoding="async"
                       />
                     </button>
                   ))}

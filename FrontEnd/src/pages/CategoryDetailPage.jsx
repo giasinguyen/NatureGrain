@@ -5,6 +5,9 @@ import ProductCard from '../components/ui/ProductCard';
 import Pagination from '../components/ui/Pagination';
 import ProductFilter from '../components/ui/ProductFilter';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
+import { getImageUrlWithCacheBuster } from '../utils/imageUtils';
+import { useCart } from '../context/CartContext';
+import { toast } from 'react-toastify';
 
 const CategoryDetailPage = () => {
   const { id } = useParams();
@@ -14,6 +17,7 @@ const CategoryDetailPage = () => {
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const { addToCart } = useCart();
   const [filters, setFilters] = useState({
     sort: 'newest',
     priceRange: [0, 1000000],
@@ -138,10 +142,23 @@ const CategoryDetailPage = () => {
 
   return (
     <div className="bg-gray-50 min-h-screen py-10">
-      <div className="container mx-auto px-4">
-        {/* Banner danh mục */}
+      <div className="container mx-auto px-4">        {/* Banner danh mục - with enhanced image handling */}
         <div className="relative mb-12">
           <div className="w-full h-64 bg-gradient-to-r from-green-700 to-green-500 rounded-lg overflow-hidden shadow-lg">
+            {/* Add category image with optimization if available */}
+            {category && category.image && (
+              <img 
+                src={getImageUrlWithCacheBuster(`${category.image}`)}
+                alt={category ? category.name : 'Category image'}
+                className="absolute inset-0 w-full h-full object-cover opacity-30 mix-blend-overlay"
+                loading="eager"
+                decoding="async"
+                onError={(e) => {
+                  // If image fails to load, let the gradient show through
+                  e.target.style.display = 'none';
+                }}
+              />
+            )}
             <div className="absolute inset-0 flex items-center px-8">
               <div className="max-w-2xl">
                 <h1 className="text-3xl font-bold text-white mb-4">{category ? category.name : 'Danh mục sản phẩm'}</h1>
@@ -198,10 +215,29 @@ const CategoryDetailPage = () => {
                 <p className="text-gray-600">Không tìm thấy sản phẩm nào trong danh mục này.</p>
               </div>
             ) : (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {currentProducts.map((product) => (
-                    <ProductCard key={product.id} product={product} />
+              <>                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {currentProducts.map((product) => (                    <ProductCard 
+                      key={product.id} 
+                      product={product}
+                      onAddToCart={() => {
+                        // Add to cart using the cart context
+                        addToCart({
+                          id: product.id,
+                          name: product.name,
+                          price: product.discountPrice || product.price,
+                          quantity: 1,
+                          image: product.images && product.images.length > 0 ? product.images[0] : null
+                        });
+                        toast.success(`Đã thêm ${product.name} vào giỏ hàng!`, {
+                          position: "bottom-right",
+                          autoClose: 3000
+                        });
+                      }}
+                      onQuickView={() => {
+                        // For quick view, navigate to product detail page as a simple solution
+                        window.location.href = `/products/${product.id}`;
+                      }}
+                    />
                   ))}
                 </div>
                 

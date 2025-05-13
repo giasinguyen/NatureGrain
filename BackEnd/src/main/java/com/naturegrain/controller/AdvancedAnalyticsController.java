@@ -293,7 +293,7 @@ public class AdvancedAnalyticsController {
             .filter(o -> o != null && o.getUser() != null)
             .collect(Collectors.groupingBy(o -> o.getUser().getId()));
         
-        List<Map<String, Object>> customerData = new ArrayList<>();
+        List<Map<String, Object>> customerData = new ArrayList<>(); 
         
         for (Map.Entry<Long, List<Order>> entry : ordersByUser.entrySet()) {
             Long userId = entry.getKey();

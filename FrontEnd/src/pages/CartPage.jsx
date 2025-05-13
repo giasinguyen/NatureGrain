@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { TrashIcon, MinusIcon, PlusIcon, ShoppingCartIcon } from '@heroicons/react/24/outline';
 import { useCart } from '../context/CartContext';
+import { loadImageProgressively } from '../utils/imageUtils';
 
 const CartPage = () => {
   const { cartItems, cartTotal, updateQuantity, removeFromCart, clearCart } = useCart();
@@ -65,16 +66,23 @@ const CartPage = () => {
               {cartItems.map((item) => (
                 <div key={item.id} className="grid grid-cols-12 gap-4 p-4 items-center">
                   {/* Product info */}
-                  <div className="col-span-6 flex items-center space-x-4">
-                    <Link to={`/products/${item.id}`} className="flex-shrink-0">
+                  <div className="col-span-6 flex items-center space-x-4">                    <Link to={`/products/${item.id}`} className="flex-shrink-0">
                       <img
-                        src={item.image ? `http://localhost:8080/photos/${item.image.name}` : '/dummy.png'}
+                        ref={imageRef => {
+                          if (imageRef) {
+                            loadImageProgressively({
+                              imgElement: imageRef,
+                              src: {
+                                url: item.image ? `http://localhost:8080/photos/${item.image.name}` : null,
+                                id: item.image?.id,
+                                options: { width: 64, height: 64, quality: 'auto', crop: 'fill' }
+                              },
+                              fallbackUrl: '/dummy.png'
+                            });
+                          }
+                        }}
                         alt={item.name}
                         className="w-16 h-16 object-cover rounded-md"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = '/dummy.png';
-                        }}
                       />
                     </Link>
                     <div>

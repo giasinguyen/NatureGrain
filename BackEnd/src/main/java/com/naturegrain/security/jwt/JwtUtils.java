@@ -20,9 +20,7 @@ import io.jsonwebtoken.*;
 
 @Component
 public class JwtUtils {
-    private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
-
-    @Value("${jwtSecret}")
+    private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);    @Value("${jwtSecret:${JWT_SECRET:A7x9B3yZ1qP8dR5tG2wL0mC4vF6eH!@#$%^&*(}}")
     private String jwtSecret;
   
     @Value("${jwtExpirationMs}")

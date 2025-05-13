@@ -71,27 +71,41 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Product updateProduct(long id, CreateProductRequest request) {
-        // TODO Auto-generated method stub
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Not Found Product With Id: " + id));
+        
+        // Update basic product information
         product.setName(request.getName());
         product.setDescription(request.getDescription());
         product.setPrice(request.getPrice());
         product.setQuantity(request.getQuantity());
+        
+        // Update category
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new NotFoundException("Not Found Category With Id: " + request.getCategoryId()));
         product.setCategory(category);
 
-        Set<Image> images = new HashSet<>();
-        for (long imageId : request.getImageIds()) {
-            Image image = imageRepository.findById(imageId)
-                    .orElseThrow(() -> new NotFoundException("Not Found Image With Id: " + imageId));
-            images.add(image);
+        // Handle image IDs - ensure imageIds is not null and properly processed
+        if (request.getImageIds() != null && !request.getImageIds().isEmpty()) {
+            Set<Image> images = new HashSet<>();
+            for (long imageId : request.getImageIds()) {
+                try {
+                    Image image = imageRepository.findById(imageId)
+                            .orElseThrow(() -> new NotFoundException("Not Found Image With Id: " + imageId));
+                    images.add(image);
+                } catch (Exception e) {
+                    // Log the error but continue with other images
+                    System.err.println("Error finding image with ID " + imageId + ": " + e.getMessage());
+                }
+            }
+            
+            if (!images.isEmpty()) {
+                // Only update if we found at least one valid image
+                product.setImages(images);
+            }
         }
-        product.setImages(images);
-        productRepository.save(product);
-
-        return product;
+        
+        return productRepository.save(product);
     }
 
     @Override
@@ -99,7 +113,8 @@ public class ProductServiceImpl implements ProductService {
         // TODO Auto-generated method stub
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Not Found Product With Id: " + id));
-        product.getImages().remove(this);
+        // Clear the product-image relationship but don't delete the actual images
+        product.setImages(new HashSet<>());
         productRepository.delete(product);
     }
 

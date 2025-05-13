@@ -1,8 +1,13 @@
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { getImageUrlWithCacheBuster } from '../utils/imageUtils';
 
 // Sử dụng biến môi trường nếu có, nếu không dùng giá trị mặc định
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+
+// Timeouts
+const DEFAULT_TIMEOUT = 30000; // 30 seconds default
+const IMAGE_OPERATION_TIMEOUT = 90000; // 90 seconds for image operations
 
 // Tạo instance axios với cấu hình mặc định
 const api = axios.create({
@@ -11,7 +16,40 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
   withCredentials: true, // Important: Allows cookies to be sent and received
-  timeout: 10000, // Timeout after 10 seconds
+  timeout: DEFAULT_TIMEOUT,
+});
+
+// Create a separate instance for image operations with longer timeout
+const imageApi = axios.create({
+  baseURL: API_URL,
+  withCredentials: true,
+  timeout: IMAGE_OPERATION_TIMEOUT,
+});
+
+// Add retry mechanism for image API requests
+imageApi.interceptors.response.use(null, async (error) => {
+  const config = error.config;
+  
+  // Only retry GET requests for images, not mutations
+  if (config && config.method === 'get' && config.url.includes('images') && (!config.retry || config.retry < 3)) {
+    config.retry = (config.retry || 0) + 1;
+    
+    // Add exponential backoff delay
+    const delay = Math.pow(2, config.retry) * 1000;
+    await new Promise(resolve => setTimeout(resolve, delay));
+    
+    // Add cache busting parameter to avoid cached errors
+    if (config.url.includes('?')) {
+      config.url = `${config.url}&t=${Date.now()}`;
+    } else {
+      config.url = `${config.url}?t=${Date.now()}`;
+    }
+    
+    console.log(`Retrying image request (attempt ${config.retry}): ${config.url}`);
+    return imageApi(config);
+  }
+  
+  return Promise.reject(error);
 });
 
 // Biến để theo dõi có đang redirect hay không
@@ -159,11 +197,10 @@ export const productService = {
   searchProducts: (query) => api.get(`/product/search?keyword=${query}`),
   getProductsByCategory: (categoryId) => api.get(`/product/category/${categoryId}`),
   findRelatedProduct: (id) => api.get(`/product/related/${id}`),
-  
-  // Admin endpoints
+    // Admin endpoints
   createProduct: (productData) => api.post('/product/create', productData),
-  updateProduct: (id, productData) => api.put(`/product/${id}`, productData),
-  deleteProduct: (id) => api.delete(`/product/${id}`),
+  updateProduct: (id, productData) => api.put(`/product/update/${id}`, productData),
+  deleteProduct: (id) => api.delete(`/product/delete/${id}`),
 };
 
 // Category Services
@@ -280,17 +317,98 @@ export const fileService = {
     });
   },
   
-  // Upload product image
+  // Upload product images with optimized handling and longer timeout - USING CLOUDINARY
+  uploadProductImages: (files) => {
+    const formData = new FormData();
+    // Support both single file and array of files
+    if (Array.isArray(files)) {
+      files.forEach(file => formData.append('files', file));
+    } else {
+      formData.append('files', files);
+    }
+    
+    // Use longer timeout for image uploads (90 seconds)
+    return api.post('/cloudinary/product-images/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      },
+      timeout: 90000,
+      onUploadProgress: progressEvent => {
+        console.log(`Upload progress: ${Math.round((progressEvent.loaded * 100) / progressEvent.total)}%`);
+      }
+    }).catch(error => {
+      if (error.code === 'ECONNABORTED') {
+        throw new Error('Upload timeout: Image upload took too long. Try uploading smaller or fewer images.');
+      }
+      throw error;
+    });
+  },
+  
+  // Get all product images (for admin) with retry mechanism
+  getAllProductImages: () => imageApi.get('/product-images/all'),
+  
+  // Get images for a specific product with retry mechanism and cache busting
+  getProductImages: (productId) => {
+    if (!productId) return Promise.resolve({ data: [] });
+    // Add cache busting parameter to avoid ERR_CONTENT_LENGTH_MISMATCH errors
+    const url = getImageUrlWithCacheBuster(`/product/${productId}/images`);
+    return imageApi.get(url);
+  },
+    // Set main image for product (expects imageId as first in the array)
+    setMainProductImage: (productId, imageIds) => {
+      // Only proceed if we have product ID and image IDs
+      if (!productId || !imageIds || imageIds.length === 0) {
+        return Promise.resolve({ success: false, message: "Missing required data" });
+      }
+      
+      // First get the current product data to maintain all fields
+      return productService.getProduct(productId)
+        .then(response => {
+          const product = response.data;
+          if (!product) {
+            throw new Error("Product not found");
+          }
+          
+          // Now update with the new image IDs but keeping all other product data
+          return imageApi.put(`/product/update/${productId}`, {
+            name: product.name,
+            description: product.description,
+            price: product.price,
+            quantity: product.quantity,
+            categoryId: product.category?.id || 1,
+            imageIds: imageIds
+          });
+        })
+        .catch(error => {
+          console.error("Error in setMainProductImage:", error);
+          return Promise.reject(error);
+        });
+    },
+  
+  // Delete product image - support both legacy and Cloudinary APIs
+  deleteProductImage: (id) => {
+    // Try Cloudinary endpoint first, fall back to legacy if needed
+    return api.delete(`/cloudinary/${id}`).catch(error => {
+      console.log('Cloudinary delete failed, trying legacy endpoint:', error);
+      return api.delete(`/product-images/delete/${id}`);
+    });
+  },
+  
+  // Legacy method for backward compatibility
   uploadProductImage: (file) => {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('files', file);
     
-    return api.post('/files/products', formData, {
+    // Use Cloudinary endpoint
+    return api.post('/cloudinary/product-images/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
     });
   },
+  
+  // Get Cloudinary image by ID
+  getCloudinaryImage: (id) => api.get(`/cloudinary/${id}`),
   
   // Lấy URL avatar từ id người dùng
   getAvatarUrl: (userId) => {
@@ -301,57 +419,55 @@ export const fileService = {
 
 // Dashboard Services (Admin)
 export const dashboardService = {
-  getStats: () => api.get('/dashboard/stats'),
+  getStats: () => api.get("/dashboard/stats"),
   getRecentOrders: (limit = 5) => api.get(`/dashboard/recent-orders?limit=${limit}`),
   getTopProducts: (limit = 5) => api.get(`/dashboard/top-products?limit=${limit}`),
   getSalesChartData: (days = 7) => api.get(`/dashboard/sales-chart?days=${days}`),
-  getCategoryBreakdown: () => api.get('/dashboard/category-breakdown'),
+  getCategoryBreakdown: () => api.get("/dashboard/category-breakdown")
 };
 
 // Analytics Services (Admin)
 export const analyticsService = {
   // Basic analytics
-  getSalesTrends: (timeframe = 'daily', timespan = 30) => 
+  getSalesTrends: (timeframe = "daily", timespan = 30) => 
     api.get(`/analytics/sales-trends?timeframe=${timeframe}&timespan=${timespan}`),
   getUserGrowth: (days = 30) => api.get(`/analytics/user-growth?days=${days}`),
-  getCustomerRetention: () => api.get('/analytics/customer-retention'),
-  getProductPerformance: () => api.get('/analytics/product-performance'),
-  getOrderStatusDistribution: () => api.get('/analytics/order-status-distribution'),
-  
+  getCustomerRetention: () => api.get("/analytics/customer-retention"),
+  getProductPerformance: () => api.get("/analytics/product-performance"),
+  getOrderStatusDistribution: () => api.get("/analytics/order-status-distribution"),
   // Advanced analytics
-  getSalesByHour: () => api.get('/analytics/sales-by-hour'),
-  getCustomerInsights: () => api.get('/analytics/customer-insights'),
+  getSalesByHour: () => api.get("/analytics/sales-by-hour"),
+  getCustomerInsights: () => api.get("/analytics/customer-insights"),
   getSalesByDateRange: (startDate, endDate) => 
-    api.get(`/analytics/sales-by-date-range${startDate ? `?startDateStr=${startDate}${endDate ? `&endDateStr=${endDate}` : ''}` : ''}`),
-  getOrderProcessingTime: () => api.get('/analytics/order-processing-time'),
+    api.get(`/analytics/sales-by-date-range${startDate ? `?startDateStr=${startDate}${endDate ? `&endDateStr=${endDate}` : ""}` : ""}`),
+  getOrderProcessingTime: () => api.get("/analytics/order-processing-time"),
   
   // Export functionality
-  exportSalesReport: (days = 30, format = 'csv') => 
-    api.get(`/analytics/export-report?days=${days}&format=${format}`, { responseType: format === 'csv' ? 'blob' : 'json' }),
+  exportSalesReport: (days = 30, format = "csv") => 
+    api.get(`/analytics/export-report?days=${days}&format=${format}`, { responseType: format === "csv" ? "blob" : "json" })
 };
 
 // Advanced Analytics Services (Admin)
 export const advancedAnalyticsService = {
   // Customer Analysis
-  getRfmAnalysis: () => api.get('/advanced-analytics/rfm-analysis'),
+  getRfmAnalysis: () => api.get("/advanced-analytics/rfm-analysis"),
   getBasketAnalysis: (limit = 20) => api.get(`/advanced-analytics/basket-analysis?limit=${limit}`),
-  getFunnelAnalysis: () => api.get('/advanced-analytics/funnel-analysis'),
-  getUserCohortAnalysis: () => api.get('/advanced-analytics/user-cohort-analysis'),
-  getUserCohortData: () => api.get('/advanced-analytics/user-cohort-analysis'), // Alias for backward compatibility
-  getCustomerLifetimeValue: () => api.get('/advanced-analytics/customer-lifetime-value'),
-  getCustomerInsights: () => api.get('/advanced-analytics/customer-insights'),
-  
+  getFunnelAnalysis: () => api.get("/advanced-analytics/funnel-analysis"),
+  getUserCohortAnalysis: () => api.get("/advanced-analytics/user-cohort-analysis"),
+  getUserCohortData: () => api.get("/advanced-analytics/user-cohort-analysis"), // Alias for backward compatibility
+  getCustomerLifetimeValue: () => api.get("/advanced-analytics/customer-lifetime-value"),
+  getCustomerInsights: () => api.get("/advanced-analytics/customer-insights"),
   // Trend Analysis
-  getSeasonalTrends: (timeframe, year) => api.get(`/advanced-analytics/seasonal-trends?timeframe=${timeframe || 'monthly'}&year=${year || new Date().getFullYear()}`),
-  getSalesTrends: () => api.get('/advanced-analytics/sales-trends'),
+  getSeasonalTrends: (timeframe, year) => api.get(`/advanced-analytics/seasonal-trends?timeframe=${timeframe || "monthly"}&year=${year || new Date().getFullYear()}`),
+  getSalesTrends: () => api.get("/advanced-analytics/sales-trends"),
   getCategoryPerformance: (startDate, endDate) => 
-    api.get(`/advanced-analytics/category-performance${startDate ? `?startDateStr=${startDate}${endDate ? `&endDateStr=${endDate}` : ''}` : ''}`),
-  getDayHourHeatmap: (metric = 'orders') => api.get(`/advanced-analytics/day-hour-heatmap?metric=${metric}`),
+    api.get(`/advanced-analytics/category-performance${startDate ? `?startDateStr=${startDate}${endDate ? `&endDateStr=${endDate}` : ""}` : ""}`),
+  getDayHourHeatmap: (metric = "orders") => api.get(`/advanced-analytics/day-hour-heatmap?metric=${metric}`),
   getOrderCompletionRate: (days = 30) => api.get(`/advanced-analytics/order-completion-rate?days=${days}`),
   getOrderCompletionRates: (days = 30) => api.get(`/advanced-analytics/order-completion-rate?days=${days}`), // Alias for backward compatibility
-  getSalesByHour: () => api.get('/advanced-analytics/sales-by-hour'),
-  getOrderProcessingTime: () => api.get('/advanced-analytics/order-processing-time'),
-  getSalesByDateRange: (startDate, endDate) => api.get(`/advanced-analytics/sales-by-date?startDate=${startDate || ''}&endDate=${endDate || ''}`),
+  getSalesByHour: () => api.get("/advanced-analytics/sales-by-hour"),
+  getOrderProcessingTime: () => api.get("/advanced-analytics/order-processing-time"),
+  getSalesByDateRange: (startDate, endDate) => api.get(`/advanced-analytics/sales-by-date?startDate=${startDate || ""}&endDate=${endDate || ""}`)
 };
 
 export default api;
