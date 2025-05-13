@@ -218,10 +218,9 @@ export const orderService = {
   getOrders: () => api.get('/order'),
   getOrder: (id) => api.get(`/order/${id}`),
   cancelOrder: (id) => api.put(`/order/${id}/cancel`),
-  
-  // Admin endpoints
+    // Admin endpoints
   updateOrderStatus: (id, status) => api.put(`/order/${id}/status`, { status }),
-  getAllOrders: () => api.get('/order/all'),
+  getAllOrders: (sortBy = 'newest') => api.get(`/order/all?sortBy=${sortBy}`),
   getOrdersByStatus: (status) => api.get(`/order/status/${status}`),
 };
 

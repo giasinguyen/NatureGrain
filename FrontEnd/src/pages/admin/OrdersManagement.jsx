@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { 
   MagnifyingGlassIcon as SearchIcon, XCircleIcon, EyeIcon, 
-  FunnelIcon as FilterIcon, CheckCircleIcon, XMarkIcon as XIcon 
+  FunnelIcon as FilterIcon, CheckCircleIcon, XMarkIcon as XIcon,
+  ArrowUpIcon, ArrowDownIcon
 } from '@heroicons/react/24/outline';
 import { orderService } from '../../services/api';
 
@@ -14,6 +15,7 @@ const OrdersManagement = () => {
   const [showModal, setShowModal] = useState(false);
   const [currentOrder, setCurrentOrder] = useState(null);
   const [orderStatus, setOrderStatus] = useState('');
+  const [sortBy, setSortBy] = useState('newest'); // Default sort option
 
   const statusOptions = [
     { value: 'PENDING', label: 'Đang xử lý' },
@@ -22,17 +24,25 @@ const OrdersManagement = () => {
     { value: 'COMPLETED', label: 'Đã hoàn thành' },
     { value: 'CANCELLED', label: 'Đã hủy' }
   ];
+
+  const sortOptions = [
+    { value: 'newest', label: 'Mới nhất' },
+    { value: 'oldest', label: 'Cũ nhất' },
+    { value: 'highest_price', label: 'Giá cao nhất' },
+    { value: 'lowest_price', label: 'Giá thấp nhất' }
+  ];
   
-  // Fetch orders on component mount
+  // Fetch orders on component mount and when sort option changes
   useEffect(() => {
     fetchOrders();
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sortBy]);
   
-  // Fetch all orders
+  // Fetch all orders with sorting
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const response = await orderService.getOrders();
+      const response = await orderService.getAllOrders(sortBy);
       setOrders(response.data || []);
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -115,8 +125,23 @@ const OrdersManagement = () => {
 
   // Format date
   const formatDate = (dateString) => {
-    const options = { year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' };
-    return new Date(dateString).toLocaleDateString('vi-VN', options);
+    if (!dateString) return "Không có ngày";
+    
+    try {
+      const options = { year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' };
+      const date = new Date(dateString);
+      
+      // Kiểm tra xem ngày có hợp lệ không
+      if (isNaN(date.getTime())) {
+        console.warn("Invalid date:", dateString);
+        return "Ngày không hợp lệ";
+      }
+      
+      return date.toLocaleDateString('vi-VN', options);
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "Lỗi định dạng ngày";
+    }
   };
 
   return (
@@ -146,7 +171,25 @@ const OrdersManagement = () => {
           )}
         </div>
         
-        <div className="relative md:w-1/4">
+        {/* Sort By */}
+        <div className="relative md:w-1/5">
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-md appearance-none focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+          >
+            {sortOptions.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          {sortBy.includes('highest_price') ? 
+            <ArrowUpIcon className="absolute w-5 h-5 text-gray-400 top-2.5 left-3" /> : 
+            <ArrowDownIcon className="absolute w-5 h-5 text-gray-400 top-2.5 left-3" />}
+        </div>
+        
+        <div className="relative md:w-1/5">
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -219,12 +262,12 @@ const OrdersManagement = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {formatDate(order.createdAt)}
+                      {formatDate(order.createdAt || order.createAt)}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.totalAmount || 0)}
+                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.totalAmount || order.totalPrice || 0)}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -290,10 +333,10 @@ const OrdersManagement = () => {
                     <h4 className="mb-2 text-sm font-medium text-gray-700">Thông tin đơn hàng</h4>
                     <div className="p-4 border border-gray-200 rounded-md">
                       <p className="mb-1 text-sm">
-                        <span className="font-medium">Ngày đặt:</span> {formatDate(currentOrder.createdAt)}
+                        <span className="font-medium">Ngày đặt:</span> {formatDate(currentOrder.createdAt || currentOrder.createAt)}
                       </p>
                       <p className="mb-1 text-sm">
-                        <span className="font-medium">Tổng tiền:</span> {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(currentOrder.totalAmount || 0)}
+                        <span className="font-medium">Tổng tiền:</span> {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(currentOrder.totalAmount || currentOrder.totalPrice || 0)}
                       </p>
                       <p className="mb-1 text-sm">
                         <span className="font-medium">Ghi chú:</span> {currentOrder.note || 'Không có'}

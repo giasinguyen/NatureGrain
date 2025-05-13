@@ -148,14 +148,18 @@ public class AdvancedAnalyticsController {
     @Operation(summary = "Phân tích giỏ hàng - Sản phẩm thường được mua cùng nhau")
     public ResponseEntity<?> getBasketAnalysis(@RequestParam(defaultValue = "20") int limit) {
         List<Object[]> productRelationships = orderDetailRepository.findProductCrossSellRelationships(limit);
-        
-        List<Map<String, Object>> formattedData = new ArrayList<>();
+          List<Map<String, Object>> formattedData = new ArrayList<>();
         for (Object[] row : productRelationships) {
+            // Skip rows with null values in critical fields
+            if (row[0] == null || row[2] == null || row[4] == null) {
+                continue;
+            }
+            
             Map<String, Object> pair = new HashMap<>();
             pair.put("product1Id", row[0]);
-            pair.put("product1Name", row[1]);
+            pair.put("product1Name", row[1] != null ? row[1] : "Unknown");
             pair.put("product2Id", row[2]);
-            pair.put("product2Name", row[3]);
+            pair.put("product2Name", row[3] != null ? row[3] : "Unknown");
             pair.put("frequency", row[4]);
             
             formattedData.add(pair);
@@ -169,16 +173,16 @@ public class AdvancedAnalyticsController {
     public ResponseEntity<?> getFunnelAnalysis() {
         // Count total registered users
         long totalUsers = userRepository.count();
-        
-        // Count users who placed at least one order
+          // Count users who placed at least one order, handling null users
         long usersWithOrders = orderRepository.findAll().stream()
+            .filter(order -> order.getUser() != null)
             .map(order -> order.getUser().getId())
             .distinct()
             .count();
         
-        // Count users with completed orders
+        // Count users with completed orders, handling null users
         long usersWithCompletedOrders = orderRepository.findAll().stream()
-            .filter(order -> "COMPLETED".equals(order.getStatus()))
+            .filter(order -> "COMPLETED".equals(order.getStatus()) && order.getUser() != null)
             .map(order -> order.getUser().getId())
             .distinct()
             .count();
@@ -252,10 +256,8 @@ public class AdvancedAnalyticsController {
                 }
                 
                 // Count users from this cohort who ordered in this month
-                final String targetMonth = month;
-                long activeUsers = allOrders.stream()
-                    .filter(o -> o.getCreateAt() != null &&
-                           o.getUser() != null &&
+                final String targetMonth = month;                long activeUsers = allOrders.stream()                    .filter(o -> o.getCreateAt() != null &&
+                           o.getUser() != null && 
                            cohortUserIds.contains(o.getUser().getId()) &&
                            targetMonth.equals(o.getCreateAt().toInstant()
                                .atZone(ZoneId.systemDefault())
@@ -286,10 +288,9 @@ public class AdvancedAnalyticsController {
     @Operation(summary = "Phân tích giá trị vòng đời khách hàng (Customer Lifetime Value)")
     public ResponseEntity<?> getCustomerLifetimeValue() {
         List<Order> allOrders = orderRepository.findAll();
-        
-        // Group orders by user
+        // Group orders by user, making sure both order and user are not null
         Map<Long, List<Order>> ordersByUser = allOrders.stream()
-            .filter(o -> o.getUser() != null)
+            .filter(o -> o != null && o.getUser() != null)
             .collect(Collectors.groupingBy(o -> o.getUser().getId()));
         
         List<Map<String, Object>> customerData = new ArrayList<>();
@@ -409,8 +410,9 @@ public class AdvancedAnalyticsController {
                 .sum();
                 
             int orderCount = quarterOrders.size();
-            
+              // Filter out null user orders before counting unique customers
             long uniqueCustomers = quarterOrders.stream()
+                .filter(o -> o.getUser() != null)
                 .map(o -> o.getUser().getId())
                 .distinct()
                 .count();
@@ -452,13 +454,17 @@ public class AdvancedAnalyticsController {
         Date endDate = Date.from(endLocalDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
         
         List<Object[]> categoryData = orderDetailRepository.findRevenueByCategory(startDate, endDate);
-        
-        List<Map<String, Object>> formattedData = new ArrayList<>();
+          List<Map<String, Object>> formattedData = new ArrayList<>();
         for (Object[] row : categoryData) {
+            // Skip rows with null values in critical fields
+            if (row[0] == null) {
+                continue;
+            }
+            
             Map<String, Object> category = new HashMap<>();
             category.put("category", row[0]);
-            category.put("revenue", row[1]);
-            category.put("orderCount", row[2]);
+            category.put("revenue", row[1] != null ? row[1] : 0);
+            category.put("orderCount", row[2] != null ? row[2] : 0);
             
             formattedData.add(category);
         }
@@ -528,9 +534,9 @@ public class AdvancedAnalyticsController {
         Date endDateAsDate = Date.from(endDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
         
         List<Order> orders = orderRepository.findByCreateAtBetween(startDateAsDate, endDateAsDate);
-        
-        // Group by day
+          // Group by day
         Map<String, List<Order>> ordersByDay = orders.stream()
+            .filter(o -> o.getCreateAt() != null) // Filter out orders with null createAt
             .collect(Collectors.groupingBy(o -> {
                 LocalDate date = o.getCreateAt().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
                 return date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));

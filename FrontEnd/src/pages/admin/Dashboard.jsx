@@ -5,6 +5,25 @@ import {
   ChartBarIcon, ChevronRightIcon, PresentationChartLineIcon
 } from '@heroicons/react/24/outline';
 import { dashboardService } from '../../services/api';
+
+// Format date for orders - handles both createAt and createdAt fields
+const formatOrderDate = (order) => {
+  const dateString = order.createAt || order.createdAt;
+  if (!dateString) return "Không có ngày";
+  
+  try {
+    return new Date(dateString).toLocaleDateString('vi-VN');
+  } catch (error) {
+    console.error("Error formatting date:", error, dateString);
+    return "Ngày không hợp lệ";
+  }
+};
+
+// Format price for orders - handles both totalPrice and totalAmount fields
+const formatOrderPrice = (order) => {
+  const price = order.totalPrice || order.totalAmount || 0;
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+};
 import { Link } from 'react-router-dom';
 import SalesChart from '../../components/admin/SalesChart';
 import CategoryChart from '../../components/admin/CategoryChart';
@@ -149,8 +168,7 @@ const Dashboard = () => {
 
     fetchDashboardData();
   }, []);
-
-  const StatCard = ({ title, value, icon: Icon, change, isPositive }) => (
+  const StatCard = ({ title, value, icon: IconComponent, change, isPositive }) => (
     <div className="p-6 bg-white rounded-lg shadow">
       <div className="flex items-center justify-between">
         <div>
@@ -164,7 +182,7 @@ const Dashboard = () => {
         <div className={`p-3 rounded-full ${title.includes('sản phẩm') ? 'bg-blue-100' : 
           title.includes('dùng') ? 'bg-yellow-100' :
           title.includes('Doanh thu') ? 'bg-green-100' : 'bg-purple-100'}`}>
-          <Icon className={`w-6 h-6 ${title.includes('sản phẩm') ? 'text-blue-600' : 
+          <IconComponent className={`w-6 h-6 ${title.includes('sản phẩm') ? 'text-blue-600' : 
             title.includes('dùng') ? 'text-yellow-600' :
             title.includes('Doanh thu') ? 'text-green-600' : 'text-purple-600'}`} />
         </div>
@@ -288,15 +306,14 @@ const Dashboard = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">{order.firstname} {order.lastname}</div>
                     <div className="text-sm text-gray-500">{order.email}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  </td>                  <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {new Date(order.createAt).toLocaleDateString('vi-VN')}
+                      {formatOrderDate(order)}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.totalPrice || 0)}
+                      {formatOrderPrice(order)}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

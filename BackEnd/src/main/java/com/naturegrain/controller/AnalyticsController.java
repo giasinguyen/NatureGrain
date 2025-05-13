@@ -101,12 +101,11 @@ public class AnalyticsController {
     @Operation(summary = "Lấy dữ liệu tăng trưởng người dùng theo thời gian")
     public ResponseEntity<?> getUserGrowth(@RequestParam(defaultValue = "30") int days) {
         LocalDate endDate = LocalDate.now();
-        LocalDate startDate = endDate.minusDays(days);
+        LocalDate startDate = endDate.minusDays(days);        List<User> allUsers = userRepository.findAll();
 
-        List<User> allUsers = userRepository.findAll();
-
-        // Sort users by creation date
-        allUsers.sort(Comparator.comparing(User::getCreateAt));
+        // Sort users by creation date, handling null createAt values
+        allUsers.sort(Comparator.comparing(User::getCreateAt, 
+            Comparator.nullsLast(Comparator.naturalOrder())));
 
         // Group by day
         Map<String, Integer> dailyGrowth = new LinkedHashMap<>();
@@ -286,14 +285,17 @@ public class AnalyticsController {
     }    @GetMapping("/sales-by-hour")
     @Operation(summary = "Phân tích doanh số theo giờ trong ngày")
     public ResponseEntity<?> getSalesByHourOfDay() {
-        List<Object[]> hourlyData = orderDetailRepository.findSalesByHourOfDay();
-
-        List<Map<String, Object>> formattedData = new ArrayList<>();
+        List<Object[]> hourlyData = orderDetailRepository.findSalesByHourOfDay();        List<Map<String, Object>> formattedData = new ArrayList<>();
         for (Object[] row : hourlyData) {
+            // Skip rows with null hour
+            if (row[0] == null) {
+                continue;
+            }
+            
             Map<String, Object> hourData = new HashMap<>();
             hourData.put("hour", row[0]);
-            hourData.put("orderCount", row[1]);
-            hourData.put("revenue", row[2]);
+            hourData.put("orderCount", row[1] != null ? row[1] : 0);
+            hourData.put("revenue", row[2] != null ? row[2] : 0);
             formattedData.add(hourData);
         }
 
@@ -304,15 +306,18 @@ public class AnalyticsController {
     @Operation(summary = "Phân tích chi tiết về khách hàng")
     public ResponseEntity<?> getCustomerInsights() {
         try {
-            List<Object[]> frequencyData = orderDetailRepository.findCustomerPurchaseFrequency();
-
-            List<Map<String, Object>> customerInsights = new ArrayList<>();
+            List<Object[]> frequencyData = orderDetailRepository.findCustomerPurchaseFrequency();            List<Map<String, Object>> customerInsights = new ArrayList<>();
             for (Object[] row : frequencyData) {
+                // Skip rows with null userId
+                if (row[0] == null) {
+                    continue;
+                }
+                
                 Map<String, Object> customer = new HashMap<>();
                 customer.put("userId", row[0]);
-                customer.put("username", row[1]);
-                customer.put("orderCount", row[2]);
-                customer.put("totalSpent", row[3]);
+                customer.put("username", row[1] != null ? row[1] : "Unknown");
+                customer.put("orderCount", row[2] != null ? row[2] : 0);
+                customer.put("totalSpent", row[3] != null ? row[3] : 0);
                 customerInsights.add(customer);
             }
 
@@ -368,14 +373,17 @@ public class AnalyticsController {
             Date endDate = Date.from(endLocalDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
 
             // Use the autowired orderDetailRepository
-            List<Object[]> salesData = orderDetailRepository.findSalesByDateRange(startDate, endDate);
-
-            List<Map<String, Object>> formattedData = new ArrayList<>();
+            List<Object[]> salesData = orderDetailRepository.findSalesByDateRange(startDate, endDate);            List<Map<String, Object>> formattedData = new ArrayList<>();
             for (Object[] row : salesData) {
+                // Skip rows with null date
+                if (row[0] == null) {
+                    continue;
+                }
+                
                 Map<String, Object> dataPoint = new HashMap<>();
                 dataPoint.put("date", row[0]);
-                dataPoint.put("quantity", row[1]);
-                dataPoint.put("revenue", row[2]);
+                dataPoint.put("quantity", row[1] != null ? row[1] : 0);
+                dataPoint.put("revenue", row[2] != null ? row[2] : 0);
                 formattedData.add(dataPoint);
             }
 

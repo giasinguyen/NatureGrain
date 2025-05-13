@@ -3,6 +3,8 @@ package com.naturegrain.controller;
 import java.util.List;
 import java.util.Optional;
 
+import com.naturegrain.model.response.MessageResponse;
+import com.naturegrain.repository.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -20,8 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.naturegrain.entity.Order;
 import com.naturegrain.entity.OrderDetail;
 import com.naturegrain.model.request.CreateOrderRequest;
-import com.naturegrain.model.response.MessageResponse;
-import com.naturegrain.repository.OrderRepository;
+
 import com.naturegrain.security.service.UserDetailsImpl;
 import com.naturegrain.service.OrderService;
 
@@ -33,12 +34,10 @@ import io.swagger.v3.oas.annotations.Operation;
 public class OrderController {
     @Autowired
     private OrderService orderService;
-    
-    @Autowired
-    private OrderRepository orderRepository;
 
-    // Add this endpoint to handle direct requests to /api/order
-    @GetMapping
+    @Autowired
+    private OrderRepository orderRepository;    // Add this endpoint to handle direct requests to /api/order
+    @GetMapping("")
     @Operation(summary="Lấy ra danh sách đặt hàng của người dùng đang đăng nhập")
     public ResponseEntity<List<Order>> getOrders(){
         // Get current authenticated user
@@ -47,20 +46,51 @@ public class OrderController {
             authentication.getPrincipal() instanceof UserDetailsImpl) {
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
             List<Order> list = orderService.getOrderByUser(userDetails.getUsername());
+            
+            // Đảm bảo lấy đầy đủ thông tin sản phẩm
+            for (Order order : list) {
+                order.getOrderDetails().forEach(detail -> {
+                    if (detail.getProduct() != null) {
+                        // Trigger eager loading của product
+                        detail.getProduct().getId();
+                        
+                        // Đảm bảo tải hình ảnh sản phẩm nếu có
+                        if (detail.getProduct().getImages() != null) {
+                            detail.getProduct().getImages().size();
+                        }
+                    }
+                });
+            }
+            
             return ResponseEntity.ok(list);
         }
         
         // Return empty list if not authenticated (will be handled by security)
         return ResponseEntity.ok(List.of());
-    }
-
-    // Existing endpoints with the trailing slash
+    }    // Existing endpoints with the trailing slash
     @GetMapping("/")
     @Operation(summary="Lấy ra danh sách đặt hàng")
     public ResponseEntity<List<Order>> getList(){
         List<Order> list = orderService.getList();
-        return ResponseEntity.ok(list);
-    }    // Add endpoint to get order by ID
+        
+        // Đảm bảo lấy đầy đủ thông tin sản phẩm
+        for (Order order : list) {
+            order.getOrderDetails().forEach(detail -> {
+                if (detail.getProduct() != null) {
+                    // Trigger eager loading của product
+                    detail.getProduct().getId();
+                    
+                    // Đảm bảo tải hình ảnh sản phẩm nếu có
+                    if (detail.getProduct().getImages() != null) {
+                        detail.getProduct().getImages().size();
+                    }
+                }
+            });
+        }
+            
+        return ResponseEntity.ok(list);    }
+    
+    // Add endpoint to get order by ID
     @GetMapping("/{id}")
     @Operation(summary="Lấy thông tin chi tiết đơn hàng theo ID")
     public ResponseEntity<?> getOrderById(@PathVariable("id") Long id){
@@ -105,13 +135,28 @@ public class OrderController {
             }
         } else {
             return ResponseEntity.notFound().build();
-        }
-    }
-
+        }    }
+    
     @GetMapping("/user")
     @Operation(summary="Lấy ra danh sách đặt hàng của người dùng bằng username")
     public ResponseEntity<List<Order>> getListByUser(@RequestParam("username") String username){
         List<Order> list = orderService.getOrderByUser(username);
+        
+        // Đảm bảo lấy đầy đủ thông tin sản phẩm
+        for (Order order : list) {
+            order.getOrderDetails().forEach(detail -> {
+                if (detail.getProduct() != null) {
+                    // Trigger eager loading của product
+                    detail.getProduct().getId();
+                    
+                    // Đảm bảo tải hình ảnh sản phẩm nếu có
+                    if (detail.getProduct().getImages() != null) {
+                        detail.getProduct().getImages().size();
+                    }
+                }
+            });
+        }
+        
         return ResponseEntity.ok(list);
     }
 
@@ -136,5 +181,57 @@ public class OrderController {
             @PathVariable("productId") Long productId) {
         OrderDetail updatedDetail = orderService.associateProductWithOrderDetail(orderDetailId, productId);
         return ResponseEntity.ok(updatedDetail);
+    }
+
+    @GetMapping("/all")
+    @Operation(summary="Lấy tất cả đơn hàng với tham số sắp xếp")
+    public ResponseEntity<List<Order>> getAllOrders(
+            @RequestParam(required = false, defaultValue = "newest") String sortBy) {
+        List<Order> allOrders = orderService.getList();
+        
+        // Đảm bảo lấy đầy đủ thông tin sản phẩm
+        for (Order order : allOrders) {
+            order.getOrderDetails().forEach(detail -> {
+                if (detail.getProduct() != null) {
+                    // Trigger eager loading của product
+                    detail.getProduct().getId();
+                    
+                    // Đảm bảo tải hình ảnh sản phẩm nếu có
+                    if (detail.getProduct().getImages() != null) {
+                        detail.getProduct().getImages().size();
+                    }
+                }
+            });
+        }
+        
+        // Sắp xếp theo yêu cầu
+        switch (sortBy) {
+            case "newest":
+                // Sắp xếp theo ngày tạo giảm dần (mới nhất lên đầu)
+                allOrders.sort((o1, o2) -> o2.getCreateAt().compareTo(o1.getCreateAt()));
+                break;
+                
+            case "oldest":
+                // Sắp xếp theo ngày tạo tăng dần (cũ nhất lên đầu)
+                allOrders.sort((o1, o2) -> o1.getCreateAt().compareTo(o2.getCreateAt()));
+                break;
+                
+            case "highest_price":
+                // Sắp xếp theo giá giảm dần (cao nhất lên đầu)
+                allOrders.sort((o1, o2) -> Long.compare(o2.getTotalPrice(), o1.getTotalPrice()));
+                break;
+                
+            case "lowest_price":
+                // Sắp xếp theo giá tăng dần (thấp nhất lên đầu)
+                allOrders.sort((o1, o2) -> Long.compare(o1.getTotalPrice(), o2.getTotalPrice()));
+                break;
+                
+            default:
+                // Mặc định sắp xếp theo ngày tạo giảm dần (mới nhất lên đầu)
+                allOrders.sort((o1, o2) -> o2.getCreateAt().compareTo(o1.getCreateAt()));
+                break;
+        }
+        
+        return ResponseEntity.ok(allOrders);
     }
 }

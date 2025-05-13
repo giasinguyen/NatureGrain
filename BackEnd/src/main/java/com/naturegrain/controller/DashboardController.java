@@ -92,10 +92,26 @@ public class DashboardController {
     @GetMapping("/recent-orders")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Lấy danh sách đơn hàng gần đây")
-    public ResponseEntity<List<Order>> getRecentOrders(
+    public ResponseEntity<?> getRecentOrders(
             @RequestParam(defaultValue = "5") int limit) {
         // Get the most recent orders
         List<Order> recentOrders = orderRepository.findTop5ByOrderByCreateAtDesc();
+        
+        // Đảm bảo lấy đúng thông tin sản phẩm cho mỗi chi tiết đơn hàng
+        for (Order order : recentOrders) {
+            order.getOrderDetails().forEach(detail -> {
+                if (detail.getProduct() != null) {
+                    // Trigger eager loading của product
+                    detail.getProduct().getId();
+                    
+                    // Đảm bảo tải hình ảnh sản phẩm nếu có
+                    if (detail.getProduct().getImages() != null) {
+                        detail.getProduct().getImages().size();
+                    }
+                }
+            });
+        }
+
         return ResponseEntity.ok(recentOrders);
     }
     
