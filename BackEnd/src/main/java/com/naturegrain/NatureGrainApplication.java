@@ -12,14 +12,12 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 public class NatureGrainApplication {
 
 	static {
-		// Load environment variables from .env file before Spring context is initialized
 		Dotenv dotenv = Dotenv.configure()
 				.directory(".")
 				.ignoreIfMissing()
 				.load();
 
-		// Set system properties for Spring to use
-		System.setProperty("CLOUDINARY_CLOUD_NAME", 
+		System.setProperty("CLOUDINARY_CLOUD_NAME",
 				dotenv.get("CLOUDINARY_CLOUD_NAME", System.getProperty("CLOUDINARY_CLOUD_NAME", "")));
 		System.setProperty("CLOUDINARY_API_KEY", 
 				dotenv.get("CLOUDINARY_API_KEY", System.getProperty("CLOUDINARY_API_KEY", "")));
