@@ -129,32 +129,33 @@ const Users = () => {
       toast.error('Không thể cập nhật quyền người dùng');
     }
   };
-
   const getRoleColor = (roles) => {
+    if (!roles || !Array.isArray(roles)) return 'bg-gray-100 text-gray-800';
     if (roles.includes('ROLE_ADMIN')) return 'bg-red-100 text-red-800';
     if (roles.includes('ROLE_MODERATOR')) return 'bg-yellow-100 text-yellow-800';
     return 'bg-green-100 text-green-800';
   };
-
   const getRoleName = (roles) => {
+    if (!roles || !Array.isArray(roles)) return 'User';
     if (roles.includes('ROLE_ADMIN')) return 'Admin';
     if (roles.includes('ROLE_MODERATOR')) return 'Moderator';
     return 'User';
   };
 
   const getRoleIcon = (roles) => {
+    if (!roles || !Array.isArray(roles)) return UserIcon;
     if (roles.includes('ROLE_ADMIN')) return ShieldCheckIcon;
     if (roles.includes('ROLE_MODERATOR')) return ShieldExclamationIcon;
     return UserIcon;
   };
-
   // Filter users based on search term and role
   const filteredUsers = users.filter(user => {
-    const matchesSearch = user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         `${user.firstname} ${user.lastname}`.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = user.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         `${user.firstname || ''} ${user.lastname || ''}`.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesRole = selectedRole === 'all' || user.roles.includes(selectedRole);
+    const matchesRole = selectedRole === 'all' || 
+                      (user.roles && Array.isArray(user.roles) && user.roles.includes(selectedRole));
     
     return matchesSearch && matchesRole;
   });
@@ -243,11 +244,8 @@ const Users = () => {
                   <label className="block text-sm font-medium text-gray-700">Lần đăng nhập cuối</label>
                   <p className="mt-1 text-sm text-gray-900">{user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('vi-VN') : 'Chưa đăng nhập'}</p>
                 </div>
-              </div>
-
-              <div className="flex space-x-3 pt-4">
-                <select
-                  value={user.roles[0]}
+              </div>              <div className="flex space-x-3 pt-4">                <select
+                  value={user.roles && Array.isArray(user.roles) && user.roles.length > 0 ? user.roles[0] : 'ROLE_USER'}
                   onChange={(e) => handleRoleChange(user.id, e.target.value)}
                   className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm"
                 >
@@ -327,9 +325,8 @@ const Users = () => {
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">Admin</dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    {users.filter(user => user.roles.includes('ROLE_ADMIN')).length}
+                  <dt className="text-sm font-medium text-gray-500 truncate">Admin</dt>                  <dd className="text-lg font-medium text-gray-900">
+                    {users.filter(user => user.roles && Array.isArray(user.roles) && user.roles.includes('ROLE_ADMIN')).length}
                   </dd>
                 </dl>
               </div>
@@ -345,9 +342,8 @@ const Users = () => {
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">Moderator</dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    {users.filter(user => user.roles.includes('ROLE_MODERATOR')).length}
+                  <dt className="text-sm font-medium text-gray-500 truncate">Moderator</dt>                  <dd className="text-lg font-medium text-gray-900">
+                    {users.filter(user => user.roles && Array.isArray(user.roles) && user.roles.includes('ROLE_MODERATOR')).length}
                   </dd>
                 </dl>
               </div>
@@ -363,9 +359,8 @@ const Users = () => {
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">User</dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    {users.filter(user => user.roles.includes('ROLE_USER')).length}
+                  <dt className="text-sm font-medium text-gray-500 truncate">User</dt>                  <dd className="text-lg font-medium text-gray-900">
+                    {users.filter(user => user.roles && Array.isArray(user.roles) && user.roles.includes('ROLE_USER')).length}
                   </dd>
                 </dl>
               </div>

@@ -1,5 +1,6 @@
 package com.naturegrain.controller;
 
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,6 +29,7 @@ import com.naturegrain.model.request.CreateUserRequest;
 import com.naturegrain.model.request.LoginRequest;
 import com.naturegrain.model.response.MessageResponse;
 import com.naturegrain.model.response.UserInfoResponse;
+import com.naturegrain.repository.UserRepository;
 import com.naturegrain.security.jwt.JwtUtils;
 import com.naturegrain.security.service.UserDetailsImpl;
 import com.naturegrain.service.UserService;
@@ -41,14 +43,16 @@ import io.swagger.v3.oas.annotations.Operation;
 public class AuthController {
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
+    @Autowired    private AuthenticationManager authenticationManager;
 
     @Autowired
     private JwtUtils jwtUtils;
 
     @Autowired
     private UserService userService;
+    
+    @Autowired
+    private UserRepository userRepository;
 
     @PostMapping("/login")
     @Operation(summary="Đăng nhập")
@@ -62,13 +66,16 @@ public class AuthController {
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
         ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(userDetails);
-        
-        logger.info("User {} logged in successfully", userDetails.getUsername());        List<String> roles = userDetails.getAuthorities().stream()
+          logger.info("User {} logged in successfully", userDetails.getUsername());        List<String> roles = userDetails.getAuthorities().stream()
                 .map(item -> item.getAuthority())
                 .collect(Collectors.toList());
         
         // Lấy thêm thông tin người dùng từ database
         User user = userService.getUserByUsername(userDetails.getUsername());
+        
+        // Update last login time
+        user.setLastLogin(new Date());
+        userRepository.save(user);
 
         // Trả về đầy đủ thông tin người dùng
         return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, jwtCookie.toString())

@@ -70,9 +70,33 @@ public class User {
     private String verificationCode;
 
     private boolean enabled;
+      // Field for managing active status in admin dashboard
+    @Column(name = "active")
+    private boolean active = true;
     
     @Column(name = "create_at")
     private Date createAt;
+    
+    // Track last login date
+    @Column(name = "last_login")
+    private Date lastLogin;
+    
+    // Getters and setters for active and lastLogin
+    public boolean isActive() {
+        return active;
+    }
+    
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+    
+    public Date getLastLogin() {
+        return lastLogin;
+    }
+    
+    public void setLastLogin(Date lastLogin) {
+        this.lastLogin = lastLogin;
+    }
     
     @PrePersist
     protected void onCreate() {

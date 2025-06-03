@@ -1,0 +1,180 @@
+package com.naturegrain.controller;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.naturegrain.entity.ERole;
+import com.naturegrain.entity.Role;
+import com.naturegrain.entity.User;
+import com.naturegrain.exception.NotFoundException;
+import com.naturegrain.model.request.CreateUserRequest;
+import com.naturegrain.model.response.MessageResponse;
+import com.naturegrain.repository.RoleRepository;
+import com.naturegrain.repository.UserRepository;
+import com.naturegrain.service.UserService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@RestController
+@RequestMapping("/api/admin/users")
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:3000"}, allowCredentials = "true")
+@PreAuthorize("hasRole('ADMIN')")
+@Tag(name = "Admin User Management", description = "Endpoints for admin to manage users")
+public class AdminUserController {
+
+    @Autowired
+    private UserRepository userRepository;
+    
+    @Autowired
+    private RoleRepository roleRepository;
+    
+    @Autowired
+    private UserService userService;
+
+    @GetMapping("")
+    @Operation(summary = "Get all users")
+    public ResponseEntity<List<User>> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        return ResponseEntity.ok(users);
+    }
+    
+    @GetMapping("/{id}")
+    @Operation(summary = "Get user by ID")
+    public ResponseEntity<?> getUserById(@PathVariable Long id) {
+        Optional<User> userOpt = userRepository.findById(id);
+        if (userOpt.isPresent()) {
+            return ResponseEntity.ok(userOpt.get());
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    @PutMapping("/{id}/role")
+    @Operation(summary = "Update user role")
+    public ResponseEntity<?> updateUserRole(@PathVariable Long id, @RequestBody Map<String, String> payload) {
+        String roleName = payload.get("role");
+        if (roleName == null) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Role is required"));
+        }
+        
+        Optional<User> userOpt = userRepository.findById(id);
+        if (!userOpt.isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        User user = userOpt.get();
+        Set<Role> roles = user.getRoles();
+        roles.clear();
+        
+        // Convert role string to ERole enum
+        ERole eRole;
+        switch (roleName) {
+            case "ROLE_ADMIN":
+                eRole = ERole.ROLE_ADMIN;
+                break;
+            case "ROLE_MODERATOR":
+                eRole = ERole.ROLE_MODERATOR;
+                break;
+            default:
+                eRole = ERole.ROLE_USER;
+        }
+        
+        // Find role in repository
+        Role role = roleRepository.findByName(eRole)
+            .orElseThrow(() -> new RuntimeException("Error: Role not found"));
+        
+        roles.add(role);
+        user.setRoles(roles);
+        userRepository.save(user);
+        
+        return ResponseEntity.ok(new MessageResponse("User role updated successfully"));
+    }
+    
+    @PutMapping("/{id}/toggle-status")
+    @Operation(summary = "Toggle user active status")
+    public ResponseEntity<?> toggleUserStatus(@PathVariable Long id) {
+        Optional<User> userOpt = userRepository.findById(id);
+        if (!userOpt.isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        User user = userOpt.get();
+        // Toggle active state
+        boolean currentActive = user.isActive();
+        user.setActive(!currentActive);
+        userRepository.save(user);
+        
+        return ResponseEntity.ok(new MessageResponse("User status toggled successfully"));
+    }
+    
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete a user")
+    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+        Optional<User> userOpt = userRepository.findById(id);
+        if (!userOpt.isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        userRepository.deleteById(id);
+        return ResponseEntity.ok(new MessageResponse("User deleted successfully"));
+    }
+    
+    @PostMapping("/create")
+    @Operation(summary = "Create a new user")
+    public ResponseEntity<?> createUser(@RequestBody CreateUserRequest request) {
+        try {
+            userService.register(request);
+            return ResponseEntity.ok(new MessageResponse("User created successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/stats")
+    @Operation(summary = "Get user statistics")
+    public ResponseEntity<?> getUserStats() {
+        List<User> users = userRepository.findAll();
+        
+        long totalUsers = users.size();
+        long activeUsers = users.stream().filter(User::isActive).count();
+        long inactiveUsers = totalUsers - activeUsers;
+        
+        // Count users by role
+        Map<String, Long> usersByRole = new HashMap<>();
+        usersByRole.put("admin", users.stream()
+            .filter(u -> u.getRoles().stream().anyMatch(r -> r.getName() == ERole.ROLE_ADMIN))
+            .count());
+        usersByRole.put("moderator", users.stream()
+            .filter(u -> u.getRoles().stream().anyMatch(r -> r.getName() == ERole.ROLE_MODERATOR))
+            .count());
+        usersByRole.put("user", users.stream()
+            .filter(u -> u.getRoles().stream().anyMatch(r -> r.getName() == ERole.ROLE_USER))
+            .count());
+        
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalUsers", totalUsers);
+        stats.put("activeUsers", activeUsers);
+        stats.put("inactiveUsers", inactiveUsers);
+        stats.put("usersByRole", usersByRole);
+        
+        return ResponseEntity.ok(stats);
+    }
+}

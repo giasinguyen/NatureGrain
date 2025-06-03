@@ -267,8 +267,7 @@ export const userService = {
   getUserByUsername: (username) => api.get(`/user/?username=${username}`),
   updateUserProfile: (userData) => api.put('/user/update', userData),
   changePassword: (passwordData) => api.put('/user/password', passwordData),
-  
-  // Admin endpoints
+    // Admin endpoints
   getAllUsers: () => api.get('/admin/users'),
   getUserById: (id) => api.get(`/admin/users/${id}`),
   updateUserRole: (id, role) => api.put(`/admin/users/${id}/role`, { role }),
