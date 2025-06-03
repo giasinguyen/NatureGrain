@@ -269,9 +269,13 @@ export const userService = {
   changePassword: (passwordData) => api.put('/user/password', passwordData),
   
   // Admin endpoints
-  getAllUsers: () => api.get('/user/all'),
-  getUserById: (id) => api.get(`/user/${id}`),
-  updateUserRole: (id, role) => api.put(`/user/${id}/role`, { role }),
+  getAllUsers: () => api.get('/admin/users'),
+  getUserById: (id) => api.get(`/admin/users/${id}`),
+  updateUserRole: (id, role) => api.put(`/admin/users/${id}/role`, { role }),
+  toggleUserStatus: (id) => api.put(`/admin/users/${id}/toggle-status`),
+  deleteUser: (id) => api.delete(`/admin/users/${id}`),
+  createUser: (userData) => api.post('/admin/users/create', userData),
+  getUserStats: () => api.get('/admin/users/stats'),
 };
 
 // Contact Services
@@ -468,6 +472,29 @@ export const advancedAnalyticsService = {
   getSalesByHour: () => api.get("/advanced-analytics/sales-by-hour"),
   getOrderProcessingTime: () => api.get("/advanced-analytics/order-processing-time"),
   getSalesByDateRange: (startDate, endDate) => api.get(`/advanced-analytics/sales-by-date?startDate=${startDate || ""}&endDate=${endDate || ""}`)
+};
+
+// Settings Services (Admin)
+export const settingsService = {
+  // System settings
+  getSystemSettings: () => api.get('/admin/settings/system'),
+  updateSystemSettings: (settings) => api.put('/admin/settings/system', settings),
+  
+  // Email settings
+  getEmailSettings: () => api.get('/admin/settings/email'),
+  updateEmailSettings: (settings) => api.put('/admin/settings/email', settings),
+  
+  // Notification settings
+  getNotificationSettings: () => api.get('/admin/settings/notifications'),
+  updateNotificationSettings: (settings) => api.put('/admin/settings/notifications', settings),
+  
+  // Site settings
+  getSiteSettings: () => api.get('/admin/settings/site'),
+  updateSiteSettings: (settings) => api.put('/admin/settings/site', settings),
+  
+  // Maintenance mode
+  toggleMaintenanceMode: () => api.post('/admin/settings/maintenance/toggle'),
+  getMaintenanceStatus: () => api.get('/admin/settings/maintenance/status'),
 };
 
 export default api;

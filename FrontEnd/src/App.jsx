@@ -43,6 +43,9 @@ const AnalyticsPage = lazy(() => import("./pages/admin/AnalyticsPage"));
 const ProductsManagement = lazy(() => import("./pages/admin/ProductsManagement"));
 const CategoriesManagement = lazy(() => import("./pages/admin/CategoriesManagement"));
 const OrdersManagement = lazy(() => import("./pages/admin/OrdersManagement"));
+const UsersManagement = lazy(() => import("./pages/admin/Users"));
+const BlogsManagement = lazy(() => import("./pages/admin/BlogsManagement"));
+const SettingsPage = lazy(() => import("./pages/admin/Settings"));
 
 function App() {
   return (
@@ -121,6 +124,9 @@ function AppContent() {
         <Route path="products" element={<ProductsManagement />} />
         <Route path="categories" element={<CategoriesManagement />} />
         <Route path="orders" element={<OrdersManagement />} />
+        <Route path="users" element={<UsersManagement />} />
+        <Route path="blogs" element={<BlogsManagement />} />
+        <Route path="settings" element={<SettingsPage />} />
         {/* Add more admin routes as needed */}
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Route>
