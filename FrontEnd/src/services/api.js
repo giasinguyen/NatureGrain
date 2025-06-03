@@ -212,9 +212,9 @@ export const categoryService = {
   
   // Admin endpoints
   createCategory: (categoryData) => api.post('/category/create', categoryData),
-  updateCategory: (id, categoryData) => api.put(`/category/${id}`, categoryData),
-  deleteCategory: (id) => api.delete(`/category/${id}`),
-  enableCategory: (id) => api.put(`/category/${id}/enable`),
+  updateCategory: (id, categoryData) => api.put(`/category/update/${id}`, categoryData),
+  deleteCategory: (id) => api.delete(`/category/delete/${id}`),
+  enableCategory: (id) => api.put(`/category/enable/${id}`),
 };
 
 // Blog Services

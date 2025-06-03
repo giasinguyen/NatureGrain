@@ -61,13 +61,18 @@ public class CategoryServiceImpl implements CategoryService {
         // TODO Auto-generated method stub
         Category category = categoryRepository.findById(id).orElseThrow(() -> new NotFoundException("Not Found Category With Id: " + id));
         categoryRepository.delete(category);
-    }
-
-    @Override
+    }    @Override
     public List<Category> getListEnabled() {
         // TODO Auto-generated method stub
         List<Category> list = categoryRepository.findALLByEnabled();
         return list;
+    }
+
+    @Override
+    public Category getCategoryById(long id) {
+        // TODO Auto-generated method stub
+        Category category = categoryRepository.findById(id).orElseThrow(() -> new NotFoundException("Not Found Category With Id: " + id));
+        return category;
     }
     
 }

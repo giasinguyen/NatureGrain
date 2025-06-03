@@ -10,6 +10,8 @@ public interface CategoryService {
 
     List<Category> getListEnabled();
 
+    Category getCategoryById(long id);
+
     Category createCategory(CreateCategoryRequest request);
 
     Category updateCategory(long id,CreateCategoryRequest request);

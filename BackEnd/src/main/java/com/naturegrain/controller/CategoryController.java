@@ -36,13 +36,18 @@ public class CategoryController {
     public ResponseEntity<?> getListCategory(){
         List<Category> categories = categoryService.findAll();
         return ResponseEntity.ok(categories);
-    }
-
-    @GetMapping("/enabled")
+    }    @GetMapping("/enabled")
     @Operation(summary="Lấy ra danh sách danh mục đã kích hoạt")
     public ResponseEntity<List<Category>> getListEnabled(){
         List<Category> categories = categoryService.getListEnabled();
         return ResponseEntity.ok(categories);
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary="Lấy danh mục bằng id")
+    public ResponseEntity<Category> getCategoryById(@PathVariable long id){
+        Category category = categoryService.getCategoryById(id);
+        return ResponseEntity.ok(category);
     }
 
 
