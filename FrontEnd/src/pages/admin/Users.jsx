@@ -13,6 +13,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-toastify';
 import { userService } from '../../services/api';
+import Modal from '../../components/ui/Modal';
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -73,7 +74,45 @@ const Users = () => {
       // Try to fetch from API first
       try {
         const response = await userService.getAllUsers();
-        setUsers(response.data || []);
+        
+        // Process the data to ensure roles are properly formatted
+        const processedUsers = (response.data || []).map(user => {
+          // Ensure roles is always an array, even if it's null in the backend response
+          // Convert roles from role objects (with name property) to string array of role names
+          let roles = [];
+          
+          if (user.roles && Array.isArray(user.roles)) {
+            roles = user.roles.map(role => {
+              // Handle different role formats that might come from the API
+              if (typeof role === 'string') return role;
+              if (role && role.name) return role.name;
+              return 'ROLE_USER'; // Default fallback
+            });
+          }
+          
+          // Make sure the user always has at least one role
+          if (!roles.length) {
+            roles = ['ROLE_USER'];
+          }
+          
+          // Ensure isActive property exists
+          const isActive = user.active !== undefined ? user.active : true;
+          
+          // Format dates properly
+          const createAt = user.createAt ? new Date(user.createAt) : null;
+          const lastLogin = user.lastLogin ? new Date(user.lastLogin) : null;
+          
+          return {
+            ...user,
+            roles,
+            isActive,
+            createAt,
+            lastLogin
+          };
+        });
+        
+        setUsers(processedUsers);
+        console.log('Processed users data:', processedUsers);
       } catch (apiError) {
         console.warn('API not available, using mock data:', apiError);
         // Use mock data as fallback
@@ -165,108 +204,104 @@ const Users = () => {
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
   const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
   const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
-
+  // Import Modal at the top of your file
+  // import Modal from '../../components/ui/Modal';
   const UserModal = ({ user, isOpen, onClose }) => {
     if (!isOpen || !user) return null;
+    
+    const userActions = (
+      <div className="flex justify-end space-x-3">
+        <select
+          value={user.roles && Array.isArray(user.roles) && user.roles.length > 0 ? user.roles[0] : 'ROLE_USER'}
+          onChange={(e) => handleRoleChange(user.id, e.target.value)}
+          className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+        >
+          <option value="ROLE_USER">User</option>
+          <option value="ROLE_MODERATOR">Moderator</option>
+          <option value="ROLE_ADMIN">Admin</option>
+        </select>
+        <button
+          onClick={() => handleToggleUserStatus(user.id)}
+          className={`px-4 py-2 text-sm font-medium text-white rounded-md ${
+            user.isActive 
+              ? 'bg-red-600 hover:bg-red-700' 
+              : 'bg-green-600 hover:bg-green-700'
+          }`}
+        >
+          {user.isActive ? 'Khóa' : 'Mở khóa'}
+        </button>
+      </div>
+    );
 
     return (
-      <div className="fixed inset-0 z-50 overflow-y-auto">
-        <div className="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-          <div className="fixed inset-0 transition-opacity" aria-hidden="true">
-            <div className="absolute inset-0 bg-gray-500 opacity-75" onClick={onClose}></div>
+      <Modal 
+        isOpen={isOpen} 
+        onClose={onClose}
+        title="Chi tiết người dùng"
+        size="lg"
+        footer={userActions}
+      >
+        <div className="space-y-4">
+          <div className="flex items-center space-x-4">
+            <div className="flex-shrink-0">
+              {user.avatar ? (
+                <img
+                  className="w-16 h-16 rounded-full object-cover"
+                  src={user.avatar}
+                  alt={user.username || 'User'}
+                />
+              ) : (
+                <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center">
+                  <UserIcon className="w-8 h-8 text-gray-500" />
+                </div>
+              )}
+            </div>
+            <div>
+              <h4 className="text-lg font-semibold">{user.firstname} {user.lastname}</h4>
+              <p className="text-sm text-gray-500">@{user.username}</p>
+            </div>
           </div>
 
-          <div className="inline-block w-full max-w-lg p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-xl rounded-lg">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-900">Chi tiết người dùng</h3>
-              <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Email</label>
+              <p className="mt-1 text-sm text-gray-900">{user.email}</p>
             </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center space-x-4">
-                <div className="flex-shrink-0">
-                  {user.avatar ? (
-                    <img
-                      className="w-16 h-16 rounded-full object-cover"
-                      src={user.avatar}
-                      alt={user.username}
-                    />
-                  ) : (
-                    <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center">
-                      <UserIcon className="w-8 h-8 text-gray-500" />
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <h4 className="text-lg font-semibold">{user.firstname} {user.lastname}</h4>
-                  <p className="text-sm text-gray-500">@{user.username}</p>
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Số điện thoại</label>
+              <p className="mt-1 text-sm text-gray-900">{user.phone || 'Chưa cập nhật'}</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Địa chỉ</label>
+              <p className="mt-1 text-sm text-gray-900">{user.address || 'Chưa cập nhật'}</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Quyền</label>
+              <div className="mt-1">
+                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(user.roles)}`}>
+                  {getRoleName(user.roles)}
+                </span>
               </div>
-
-              <div className="grid grid-cols-1 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Email</label>
-                  <p className="mt-1 text-sm text-gray-900">{user.email}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Số điện thoại</label>
-                  <p className="mt-1 text-sm text-gray-900">{user.phone || 'Chưa cập nhật'}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Địa chỉ</label>
-                  <p className="mt-1 text-sm text-gray-900">{user.address || 'Chưa cập nhật'}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Quyền</label>
-                  <div className="mt-1">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleColor(user.roles)}`}>
-                      {getRoleName(user.roles)}
-                    </span>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Trạng thái</label>
-                  <div className="mt-1">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                      {user.isActive ? 'Hoạt động' : 'Đã khóa'}
-                    </span>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Ngày tạo</label>
-                  <p className="mt-1 text-sm text-gray-900">{new Date(user.createAt).toLocaleDateString('vi-VN')}</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Lần đăng nhập cuối</label>
-                  <p className="mt-1 text-sm text-gray-900">{user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('vi-VN') : 'Chưa đăng nhập'}</p>
-                </div>
-              </div>              <div className="flex space-x-3 pt-4">                <select
-                  value={user.roles && Array.isArray(user.roles) && user.roles.length > 0 ? user.roles[0] : 'ROLE_USER'}
-                  onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                  className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm"
-                >
-                  <option value="ROLE_USER">User</option>
-                  <option value="ROLE_MODERATOR">Moderator</option>
-                  <option value="ROLE_ADMIN">Admin</option>
-                </select>
-                <button
-                  onClick={() => handleToggleUserStatus(user.id)}
-                  className={`px-4 py-2 text-sm font-medium rounded-md ${user.isActive 
-                    ? 'bg-red-600 text-white hover:bg-red-700' 
-                    : 'bg-green-600 text-white hover:bg-green-700'
-                  }`}
-                >
-                  {user.isActive ? 'Khóa' : 'Mở khóa'}
-                </button>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Trạng thái</label>
+              <div className="mt-1">
+                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                  {user.isActive ? 'Hoạt động' : 'Đã khóa'}
+                </span>
               </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Ngày tạo</label>
+              <p className="mt-1 text-sm text-gray-900">{new Date(user.createAt).toLocaleDateString('vi-VN')}</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Lần đăng nhập cuối</label>
+              <p className="mt-1 text-sm text-gray-900">{user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('vi-VN') : 'Chưa đăng nhập'}</p>
             </div>
           </div>
         </div>
-      </div>
+      </Modal>
     );
   };
 

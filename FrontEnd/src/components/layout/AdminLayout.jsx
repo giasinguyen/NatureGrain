@@ -11,13 +11,17 @@ import {
   Cog6ToothIcon as CogIcon,
   XMarkIcon as XIcon,
   Bars3Icon as MenuIcon,
-  ChevronDownIcon,  ArrowRightOnRectangleIcon as LogoutIcon,
+  ChevronDownIcon,
+  ArrowRightOnRectangleIcon as LogoutIcon,
   ChartBarIcon,
   PresentationChartLineIcon,
 } from "@heroicons/react/24/outline";
 
 const AdminLayout = () => {
   const { currentUser, logout } = useAuth();
+  const userName = currentUser
+    ? currentUser.firstname || currentUser.username || "Admin"
+    : "Admin";
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -39,7 +43,11 @@ const AdminLayout = () => {
   }
   const navigation = [
     { name: "Dashboard", href: "/admin", icon: HomeIcon },
-    { name: "Phân tích", href: "/admin/analytics", icon: PresentationChartLineIcon },
+    {
+      name: "Phân tích",
+      href: "/admin/analytics",
+      icon: PresentationChartLineIcon,
+    },
     { name: "Sản phẩm", href: "/admin/products", icon: ShoppingBagIcon },
     { name: "Danh mục", href: "/admin/categories", icon: TagIcon },
     { name: "Đơn hàng", href: "/admin/orders", icon: ShoppingCartIcon },
@@ -161,25 +169,43 @@ const AdminLayout = () => {
 
       {/* Main content */}
       <div className="flex flex-col flex-1 overflow-hidden">
-        {/* Top navbar */}
+        /* Top navbar */
         <div className="relative z-10 flex flex-shrink-0 h-16 bg-white shadow">
           <button
             className="px-4 text-gray-500 border-r border-gray-200 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-green-500 lg:hidden"
             onClick={() => setSidebarOpen(true)}
           >
             <MenuIcon className="w-6 h-6" />
-          </button>
-
-          <div className="flex justify-between flex-1 px-4">
+          </button>          <div className="flex justify-between flex-1 px-4">
             <div className="flex flex-1">
               <div className="flex items-center flex-shrink-0 pl-3">
                 <h1 className="text-xl font-semibold text-gray-800">
-                  Admin Dashboard
+                  {/* Dynamically show current section name based on route */}
+                  {location.pathname === "/admin" ? "Dashboard" : 
+                   location.pathname === "/admin/users" ? "Quản lý người dùng" :
+                   location.pathname === "/admin/blogs" ? "Quản lý bài viết" :
+                   location.pathname === "/admin/products" ? "Quản lý sản phẩm" :
+                   location.pathname === "/admin/categories" ? "Danh mục" :
+                   location.pathname === "/admin/orders" ? "Đơn hàng" :
+                   location.pathname === "/admin/settings" ? "Cài đặt hệ thống" :
+                   location.pathname === "/admin/analytics" ? "Phân tích dữ liệu" :
+                   "Admin Dashboard"}
                 </h1>
               </div>
             </div>
 
             <div className="flex items-center ml-4 md:ml-6">
+              {/* Current date display */}
+              <div className="hidden md:flex items-center text-sm text-gray-600 mr-4">
+                <span className="bg-green-50 text-green-700 py-1 px-2 rounded-md">
+                  {new Date().toLocaleDateString('vi-VN', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </span>
+              </div>
+              
               <div className="relative ml-3">
                 <div>
                   <button
@@ -188,39 +214,68 @@ const AdminLayout = () => {
                   >
                     <span className="sr-only">Mở menu người dùng</span>
                     <div className="flex items-center">
-                      <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center text-white">
-                        {currentUser?.username?.charAt(0).toUpperCase()}
-                      </div>
-                      <span className="ml-2 text-gray-700">
+                      {currentUser && currentUser.avatar ? (
+                        <img
+                          className="h-8 w-8 rounded-full object-cover"
+                          src={currentUser.avatar}
+                          alt={userName}
+                        />
+                      ) : (
+                        <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                          <span className="text-sm font-medium text-green-700">
+                            {userName.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                      )}
+                      <span className="hidden sm:inline-block ml-2 text-gray-700">
                         {currentUser?.username}
                       </span>
                       <ChevronDownIcon className="w-5 h-5 ml-1 text-gray-400" />
                     </div>
                   </button>
-                </div>
-                {dropdownOpen && (
-                  <div className="absolute right-0 w-48 py-1 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
-                    <Link
-                      to="/"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={() => setDropdownOpen(false)}
-                    >
-                      Trang chủ
-                    </Link>
-                    <button
-                      className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={handleLogout}
-                    >
-                      <LogoutIcon className="w-4 h-4 mr-2" />
-                      Đăng xuất
-                    </button>
+                </div>                {dropdownOpen && (
+                  <div className="absolute right-0 w-64 py-1 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
+                    <div className="px-4 py-3 border-b border-gray-100">
+                      <p className="text-sm text-gray-500">Đăng nhập với</p>
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {currentUser?.email || currentUser?.username}
+                      </p>
+                    </div>
+                    
+                    <div className="py-1">
+                      <Link
+                        to="/admin/settings"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        onClick={() => setDropdownOpen(false)}
+                      >
+                        <CogIcon className="w-4 h-4 mr-2 text-gray-500" />
+                        Cài đặt tài khoản
+                      </Link>
+                      <Link
+                        to="/"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        onClick={() => setDropdownOpen(false)}
+                      >
+                        <HomeIcon className="w-4 h-4 mr-2 text-gray-500" />
+                        Trang chủ
+                      </Link>
+                    </div>
+                    
+                    <div className="py-1 border-t border-gray-100">
+                      <button
+                        className="flex items-center w-full px-4 py-2 text-sm text-red-700 hover:bg-red-50"
+                        onClick={handleLogout}
+                      >
+                        <LogoutIcon className="w-4 h-4 mr-2" />
+                        Đăng xuất
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
             </div>
           </div>
         </div>
-
         {/* Main content area */}
         <main className="relative flex-1 overflow-y-auto focus:outline-none">
           <div className="py-6">

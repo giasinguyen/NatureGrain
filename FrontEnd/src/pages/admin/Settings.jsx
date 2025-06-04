@@ -13,17 +13,20 @@ import {
   EyeSlashIcon,
   ArrowPathIcon,
   UserIcon,
-  ShoppingCartIcon
+  ShoppingCartIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
 import { fileService } from '../../services/api';
+import Modal from '../../components/ui/Modal';
 
 const Settings = () => {
   const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [maintenanceModalOpen, setMaintenanceModalOpen] = useState(false);
   
   // Profile settings
   const [profileData, setProfileData] = useState({
@@ -65,6 +68,10 @@ const Settings = () => {
     orderNotifications: true,
     newUserNotifications: true
   });
+
+  // Maintenance modal
+  const [isMaintenanceModalOpen, setIsMaintenanceModalOpen] = useState(false);
+  const [maintenanceMessage, setMaintenanceMessage] = useState('');
 
   useEffect(() => {
     if (currentUser) {
@@ -184,6 +191,34 @@ const Settings = () => {
     } catch (error) {
       console.error('Error updating system settings:', error);
       toast.error('Không thể cập nhật cài đặt hệ thống');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenMaintenanceModal = () => {
+    setIsMaintenanceModalOpen(true);
+  };
+
+  const handleCloseMaintenanceModal = () => {
+    setIsMaintenanceModalOpen(false);
+  };
+
+  const handleMaintenanceSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      // TODO: Replace with actual API call
+      // await settingsService.updateMaintenanceMessage(maintenanceMessage);
+      
+      // Mock update success
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast.success('Cập nhật thông báo bảo trì thành công');
+      setIsMaintenanceModalOpen(false);
+    } catch (error) {
+      console.error('Error updating maintenance message:', error);
+      toast.error('Không thể cập nhật thông báo bảo trì');
     } finally {
       setLoading(false);
     }
@@ -681,7 +716,14 @@ const Settings = () => {
                           name="maintenance"
                           type="checkbox"
                           checked={systemSettings.maintenance}
-                          onChange={(e) => setSystemSettings(prev => ({ ...prev, maintenance: e.target.checked }))}
+                          onChange={(e) => {
+                            // If trying to enable maintenance mode, show confirmation dialog first
+                            if (e.target.checked) {
+                              setMaintenanceModalOpen(true);
+                            } else {
+                              setSystemSettings(prev => ({ ...prev, maintenance: false }));
+                            }
+                          }}
                           className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
                         />
                         <label htmlFor="maintenance" className="ml-2 block text-sm text-gray-900">
@@ -797,6 +839,123 @@ const Settings = () => {
           )}
         </div>
       </div>
+
+      {/* Maintenance Message Modal */}
+      <Modal
+        isOpen={isMaintenanceModalOpen}
+        onRequestClose={handleCloseMaintenanceModal}
+        className="max-w-lg mx-auto"
+      >
+        <div className="py-6 px-4 sm:p-6">
+          <div>
+            <h3 className="text-lg leading-6 font-medium text-gray-900">
+              Thông báo bảo trì hệ thống
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Cập nhật thông báo bảo trì mà người dùng sẽ thấy trên trang.
+            </p>
+          </div>
+
+          <div className="mt-4">
+            <label htmlFor="maintenance-message" className="block text-sm font-medium text-gray-700">
+              Nội dung thông báo
+            </label>
+            <textarea
+              id="maintenance-message"
+              name="maintenance-message"
+              rows={3}
+              value={maintenanceMessage}
+              onChange={(e) => setMaintenanceMessage(e.target.value)}
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
+            />
+          </div>
+        </div>
+        <div className="px-4 py-3 bg-gray-50 text-right sm:px-6">
+          <button
+            type="button"
+            onClick={handleCloseMaintenanceModal}
+            className="mr-3 inline-flex justify-center rounded-md border border-transparent bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+          >
+            Hủy
+          </button>
+          <button
+            type="submit"
+            onClick={handleMaintenanceSubmit}
+            disabled={loading}
+            className="bg-green-600 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? (
+              <div className="flex items-center">
+                <ArrowPathIcon className="w-4 h-4 mr-2 animate-spin" />
+                Đang lưu...
+              </div>
+            ) : (
+              'Lưu thông báo'
+            )}
+          </button>
+        </div>
+      </Modal>
+
+      {/* User Detail Modal */}
+      <Modal 
+        isOpen={maintenanceModalOpen} 
+        onClose={() => setMaintenanceModalOpen(false)}
+        title="Xác nhận chế độ bảo trì"
+        size="md"
+        footer={
+          <div className="flex justify-end space-x-3">
+            <button
+              onClick={() => setMaintenanceModalOpen(false)}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+            >
+              Hủy
+            </button>
+            <button
+              onClick={() => {
+                setSystemSettings(prev => ({ ...prev, maintenance: true }));
+                setMaintenanceModalOpen(false);
+                toast.success("Đã bật chế độ bảo trì");
+              }}
+              className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
+            >
+              Xác nhận bật bảo trì
+            </button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <div className="flex items-center space-x-4 text-red-600">
+            <ExclamationTriangleIcon className="w-12 h-12" />
+            <div>
+              <h3 className="text-lg font-medium">Bật chế độ bảo trì?</h3>
+            </div>
+          </div>
+          
+          <p className="text-gray-700">
+            Khi bật chế độ bảo trì, người dùng bình thường sẽ không thể truy cập website. 
+            Chỉ người dùng có quyền quản trị mới có thể đăng nhập và truy cập.
+          </p>
+          
+          <div className="bg-yellow-50 p-4 rounded-md">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400" aria-hidden="true" />
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-yellow-800">
+                  Lưu ý quan trọng
+                </h3>
+                <div className="mt-2 text-sm text-yellow-700">
+                  <p>
+                    Hành động này sẽ làm gián đoạn dịch vụ đối với tất cả người dùng hiện tại. 
+                    Chắc chắn rằng bạn đã thông báo trước cho người dùng.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
