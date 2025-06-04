@@ -48,14 +48,6 @@ const Dashboard = () => {
     error: null
   });
 
-  // State to control which tooltips are shown on mobile devices
-  const [showTooltip, setShowTooltip] = useState({
-    revenue: false,
-    orders: false,
-    products: false,
-    categories: false
-  });
-
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -197,7 +189,9 @@ const Dashboard = () => {
         {stats.error}
       </div>
     );
-  }  return (
+  }
+  
+  return (
     <div className="space-y-6">
       {/* Welcome Card */}
       <WelcomeCard />
@@ -224,93 +218,41 @@ const Dashboard = () => {
         </Link>
       </div>
       
-      {/* Stats Cards */}      <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <div 
-          className="relative"
-          onTouchStart={() => setShowTooltip(prev => ({...prev, products: true}))}
-          onTouchEnd={() => setShowTooltip(prev => ({...prev, products: false}))}
-        >
-          <StatCard 
-            title="Tổng sản phẩm" 
-            value={stats.totalProducts} 
-            icon={ShoppingBagIcon}
-            color="blue"
-          />
-          {showTooltip.products && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70 rounded-lg z-10">
-              <p className="text-white text-sm px-4 py-2 text-center">
-                Tổng số sản phẩm hiện có trong hệ thống
-              </p>
-            </div>
-          )}
-        </div>
-        
-        <div 
-          className="relative"
-          onTouchStart={() => setShowTooltip(prev => ({...prev, users: true}))}
-          onTouchEnd={() => setShowTooltip(prev => ({...prev, users: false}))}
-        >
-          <StatCard 
-            title="Người dùng" 
-            value={stats.totalUsers} 
-            icon={UserGroupIcon}
-            color="purple"
-            change={3.5}
-          />
-          {showTooltip.users && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70 rounded-lg z-10">
-              <p className="text-white text-sm px-4 py-2 text-center">
-                Số lượng người dùng đã đăng ký (tăng 3.5% so với tháng trước)
-              </p>
-            </div>
-          )}
-        </div>
-        
-        <div 
-          className="relative"
-          onTouchStart={() => setShowTooltip(prev => ({...prev, revenue: true}))}
-          onTouchEnd={() => setShowTooltip(prev => ({...prev, revenue: false}))}
-        >
-          <StatCard 
-            title="Doanh thu" 
-            value={stats.totalRevenue} 
-            icon={CurrencyDollarIcon}
-            color="green"
-            change={stats.revenueChange || 2.5}
-            prefix=""
-            suffix=" ₫"
-            formatValue={(val) => new Intl.NumberFormat('vi-VN').format(val)}
-          />
-          {showTooltip.revenue && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70 rounded-lg z-10">
-              <p className="text-white text-sm px-4 py-2 text-center">
-                Tổng doanh thu (tăng {stats.revenueChange || 2.5}% so với tháng trước)
-              </p>
-            </div>
-          )}
-        </div>
-        
-        <div 
-          className="relative"
-          onTouchStart={() => setShowTooltip(prev => ({...prev, orders: true}))}
-          onTouchEnd={() => setShowTooltip(prev => ({...prev, orders: false}))}
-        >
-          <StatCard 
-            title="Đơn hàng" 
-            value={stats.totalOrders}
-            icon={ShoppingCartIcon}
-            color="red"
-            change={stats.orderChange || 1.8}
-          />
-          {showTooltip.orders && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-70 rounded-lg z-10">
-              <p className="text-white text-sm px-4 py-2 text-center">
-                Tổng số đơn hàng đã nhận (tăng {stats.orderChange || 1.8}% so với tháng trước)
-              </p>
-            </div>
-          )}
-        </div>
-      </div>{/* Dashboard Main Content */}
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard 
+          title="Tổng sản phẩm" 
+          value={stats.totalProducts} 
+          icon={ShoppingBagIcon}
+          color="blue"
+        />
+        <StatCard 
+          title="Người dùng" 
+          value={stats.totalUsers} 
+          icon={UserGroupIcon}
+          color="purple"
+          change={3.5}
+        />
+        <StatCard 
+          title="Doanh thu" 
+          value={stats.totalRevenue} 
+          icon={CurrencyDollarIcon}
+          color="green"
+          change={stats.revenueChange || 2.5}
+          prefix=""
+          suffix=" ₫"
+          formatValue={(val) => new Intl.NumberFormat('vi-VN').format(val)}
+        />
+        <StatCard 
+          title="Đơn hàng" 
+          value={stats.totalOrders}
+          icon={ShoppingCartIcon}
+          color="red"
+          change={stats.orderChange || 1.8}
+        />
+      </div>
+
+      {/* Dashboard Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Charts - Take up 2/3 of the width on large screens */}
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
@@ -372,7 +314,8 @@ const Dashboard = () => {
           <ActivityFeed />
         </div>
       </div>
-        {/* Recent Orders */}
+      
+      {/* Recent Orders */}
       <div className="mt-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
           <h2 className="text-lg font-medium text-gray-800 flex items-center">
@@ -451,6 +394,14 @@ const Dashboard = () => {
                   </td>
                 </tr>
               ))}
+              
+              {stats.recentOrders.length === 0 && (
+                <tr>
+                  <td colSpan="5" className="px-6 py-4 text-sm text-center text-gray-500">
+                    Không có đơn hàng nào
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -500,12 +451,9 @@ const Dashboard = () => {
           ))}
           
           {stats.recentOrders.length === 0 && (
-            <div className="text-center py-8 bg-white rounded-lg shadow">
-              <ShoppingCartIcon className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">Không có đơn hàng nào</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Hiện chưa có đơn hàng nào trong hệ thống.
-              </p>
+            <div className="bg-white shadow rounded-lg overflow-hidden p-8 text-center">
+              <DocumentTextIcon className="mx-auto h-10 w-10 text-gray-400" />
+              <p className="mt-2 text-sm text-gray-500">Không có đơn hàng nào</p>
             </div>
           )}
         </div>
@@ -513,8 +461,22 @@ const Dashboard = () => {
 
       {/* Top Products */}
       <div className="mt-8">
-        <h2 className="mb-4 text-lg font-medium text-gray-800">Sản phẩm nổi bật</h2>
-        <div className="overflow-hidden border border-gray-200 rounded-lg">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+          <h2 className="text-lg font-medium text-gray-800 flex items-center">
+            <ShoppingBagIcon className="h-5 w-5 mr-2 text-gray-500" />
+            Sản phẩm nổi bật
+          </h2>
+          <Link 
+            to="/admin/products" 
+            className="text-sm text-green-600 hover:text-green-700 flex items-center mt-2 sm:mt-0"
+          >
+            Quản lý sản phẩm
+            <ChevronRightIcon className="w-4 h-4 ml-1" />
+          </Link>
+        </div>
+        
+        {/* Products table for desktop */}
+        <div className="hidden sm:block overflow-hidden border border-gray-200 rounded-lg">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
@@ -578,6 +540,62 @@ const Dashboard = () => {
               )}
             </tbody>
           </table>
+        </div>
+        
+        {/* Products cards for mobile */}
+        <div className="sm:hidden space-y-4">
+          {stats.topProducts.map((product) => (
+            <div key={product.id} className="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
+              <div className="p-4">
+                <div className="flex items-center mb-3">
+                  <div className="flex-shrink-0 w-12 h-12">
+                    {product.images && product.images.length > 0 ? (
+                      <img 
+                        className="object-cover w-12 h-12 rounded-md" 
+                        src={`/static/photos/${product.images[0]?.url}`} 
+                        alt={product.name} 
+                      />
+                    ) : (
+                      <div className="flex items-center justify-center w-12 h-12 text-white bg-gray-300 rounded-md">
+                        <ShoppingBagIcon className="w-8 h-8" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="ml-4">
+                    <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                    <div className="text-xs text-gray-500">{product.category?.name || 'N/A'}</div>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-500">Giá:</span>
+                    <span className="text-sm font-medium text-gray-900">
+                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-500">Số lượng:</span>
+                    <span className="text-sm text-gray-900">{product.quantity}</span>
+                  </div>
+                </div>
+                
+                <div className="mt-4 pt-3 border-t border-gray-100">
+                  <Link to={`/admin/products/${product.id}`} className="text-sm text-green-600 hover:text-green-700 flex items-center justify-center">
+                    Xem chi tiết sản phẩm
+                    <ChevronRightIcon className="w-4 h-4 ml-1" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+          ))}
+          
+          {stats.topProducts.length === 0 && (
+            <div className="bg-white shadow rounded-lg overflow-hidden p-8 text-center">
+              <ShoppingBagIcon className="mx-auto h-10 w-10 text-gray-400" />
+              <p className="mt-2 text-sm text-gray-500">Không có sản phẩm nào</p>
+            </div>
+          )}
         </div>
       </div>
 
