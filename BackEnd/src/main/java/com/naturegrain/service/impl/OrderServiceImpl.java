@@ -39,10 +39,9 @@ public class OrderServiceImpl implements OrderService {
     @PersistenceContext
     private EntityManager entityManager;    @Autowired
     private ProductRepository productRepository;
-    
-    @Override
+      @Override
     @Transactional
-    public void placeOrder(CreateOrderRequest request) {
+    public Order placeOrder(CreateOrderRequest request) {
         // Create the order
         Order order = new Order();
         User user = userRepository.findByUsername(request.getUsername())
@@ -92,7 +91,9 @@ public class OrderServiceImpl implements OrderService {
         
         // Đảm bảo tất cả thay đổi được lưu và session được flush
         entityManager.flush();
-    }    @Override
+        
+        return order;
+    }@Override
     @Transactional(readOnly = true)
     public List<Order> getList() {
         List<Order> orders = orderRepository.findAll(Sort.by("id").descending());
@@ -168,5 +169,15 @@ public class OrderServiceImpl implements OrderService {
         }
         
         return updatedCount;
+    }
+
+    @Override
+    @Transactional
+    public Order updateOrderStatus(Long orderId, String status) {
+        Order order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new NotFoundException("Not Found Order With Id: " + orderId));
+            
+        order.setStatus(status);
+        return orderRepository.save(order);
     }
 }

@@ -1,11 +1,17 @@
 package com.naturegrain.controller;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import com.naturegrain.model.response.MessageResponse;
 import com.naturegrain.repository.OrderRepository;
+import com.naturegrain.repository.UserRepository;
+import com.naturegrain.entity.ActivityType;
+import com.naturegrain.entity.User;
+import com.naturegrain.service.ActivityService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -36,7 +42,13 @@ public class OrderController {
     private OrderService orderService;
 
     @Autowired
-    private OrderRepository orderRepository;    // Add this endpoint to handle direct requests to /api/order
+    private OrderRepository orderRepository;
+    
+    @Autowired
+    private ActivityService activityService;
+    
+    @Autowired
+    private UserRepository userRepository;    // Add this endpoint to handle direct requests to /api/order
     @GetMapping("")
     @Operation(summary="Lấy ra danh sách đặt hàng của người dùng đang đăng nhập")
     public ResponseEntity<List<Order>> getOrders(){
@@ -116,8 +128,7 @@ public class OrderController {
             return ResponseEntity.notFound().build();
         }
     }
-    
-    // Add endpoint to cancel an order
+      // Add endpoint to cancel an order
     @PutMapping("/{id}/cancel")
     @Operation(summary="Hủy đơn hàng")
     public ResponseEntity<?> cancelOrder(@PathVariable("id") Long id){
@@ -128,6 +139,27 @@ public class OrderController {
             if ("PENDING".equals(order.getStatus())) {
                 order.setStatus("CANCELLED");
                 orderRepository.save(order);
+                
+                // Log activity for order cancellation
+                try {
+                    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                    if (authentication != null && authentication.isAuthenticated() && 
+                        authentication.getPrincipal() instanceof UserDetailsImpl) {
+                        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+                        User user = userRepository.findById(userDetails.getId()).orElse(null);
+                        
+                        if (user != null) {
+                            String title = "Đơn hàng đã bị hủy";
+                            String description = String.format("Đơn hàng #%d với giá trị %,d VND đã bị hủy bởi %s", 
+                                                              order.getId(), order.getTotalPrice(), user.getUsername());
+                            activityService.createActivity(ActivityType.ORDER_CANCELLED, title, description, user, "Order", order.getId());
+                        }
+                    }
+                } catch (Exception e) {
+                    // Log error but don't fail the cancellation
+                    System.err.println("Failed to log order cancellation activity: " + e.getMessage());
+                }
+                
                 return ResponseEntity.ok(new MessageResponse("Order cancelled successfully"));
             } else {
                 return ResponseEntity.badRequest()
@@ -158,12 +190,31 @@ public class OrderController {
         }
         
         return ResponseEntity.ok(list);
-    }
-
-    @PostMapping("/create")
+    }    @PostMapping("/create")
     @Operation(summary="Đặt hàng sản phẩm")
     public ResponseEntity<?> placeOrder(@RequestBody CreateOrderRequest request){
-        orderService.placeOrder(request);
+        Order order = orderService.placeOrder(request);
+        
+        // Log activity for order creation
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.isAuthenticated() && 
+                authentication.getPrincipal() instanceof UserDetailsImpl) {
+                UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+                User user = userRepository.findById(userDetails.getId()).orElse(null);
+                
+                if (user != null && order != null) {
+                    String title = "Đơn hàng mới được tạo";
+                    String description = String.format("Đơn hàng #%d với tổng giá trị %,d VND được tạo bởi %s", 
+                                                      order.getId(), order.getTotalPrice(), user.getUsername());
+                    activityService.createActivity(ActivityType.ORDER_CREATED, title, description, user, "Order", order.getId());
+                }
+            }
+        } catch (Exception e) {
+            // Log error but don't fail the order creation
+            System.err.println("Failed to log order creation activity: " + e.getMessage());
+        }
+        
         return ResponseEntity.ok(new MessageResponse("Order Placed Successfully!"));
     }
 
@@ -233,5 +284,57 @@ public class OrderController {
         }
         
         return ResponseEntity.ok(allOrders);
+    }
+    
+    @PutMapping("/{id}/status")
+    @Operation(summary="Cập nhật trạng thái đơn hàng")
+    public ResponseEntity<?> updateOrderStatus(@PathVariable("id") Long id, @RequestBody Map<String, String> payload){
+        String status = payload.get("status");
+        if (status == null) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Status is required"));
+        }
+        
+        try {
+            Order order = orderService.updateOrderStatus(id, status);
+            
+            // Log activity for order status update
+            try {
+                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+                if (authentication != null && authentication.isAuthenticated() && 
+                    authentication.getPrincipal() instanceof UserDetailsImpl) {
+                    UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+                    User user = userRepository.findById(userDetails.getId()).orElse(null);
+                    
+                    if (user != null && order != null) {
+                        String title = "Trạng thái đơn hàng được cập nhật";
+                        String description = String.format("Đơn hàng #%d đã được cập nhật từ trạng thái thành '%s' bởi %s", 
+                                                          order.getId(), status, user.getUsername());
+                        
+                        // Determine activity type based on new status
+                        ActivityType activityType;
+                        switch (status.toUpperCase()) {
+                            case "COMPLETED":
+                                activityType = ActivityType.ORDER_COMPLETED;
+                                break;
+                            case "PROCESSING":
+                            case "SHIPPING":
+                            default:
+                                activityType = ActivityType.ORDER_UPDATED;
+                                break;
+                        }
+                        
+                        activityService.createActivity(activityType, title, description, user, "Order", order.getId());
+                    }
+                }
+            } catch (Exception e) {
+                // Log error but don't fail the status update
+                System.err.println("Failed to log order status update activity: " + e.getMessage());
+            }
+            
+            return ResponseEntity.ok(order);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new MessageResponse("Error updating order status: " + e.getMessage()));
+        }
     }
 }

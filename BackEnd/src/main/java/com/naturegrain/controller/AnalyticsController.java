@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.naturegrain.entity.Activity;
 import com.naturegrain.entity.Order;
 import com.naturegrain.entity.OrderDetail;
 import com.naturegrain.entity.Product;
@@ -26,6 +27,7 @@ import com.naturegrain.repository.OrderDetailRepository;
 import com.naturegrain.repository.OrderRepository;
 import com.naturegrain.repository.ProductRepository;
 import com.naturegrain.repository.UserRepository;
+import com.naturegrain.service.ActivityService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -44,13 +46,14 @@ public class AnalyticsController {
     private OrderDetailRepository orderDetailRepository;
 
     @Autowired
-    private ProductRepository productRepository;
-
-    @Autowired
+    private ProductRepository productRepository;    @Autowired
     private UserRepository userRepository;
-
+    
     @Autowired
     private CategoryRepository categoryRepository;
+
+    @Autowired
+    private ActivityService activityService;
 
     @GetMapping("/sales-trends")
     @Operation(summary = "Lấy xu hướng bán hàng theo thời gian (ngày, tuần, tháng)")
@@ -647,5 +650,146 @@ public class AnalyticsController {
         ));
         
         return result;
+    }    @GetMapping("/activity-feed")
+    @Operation(summary = "Lấy danh sách hoạt động gần đây cho dashboard")
+    public ResponseEntity<?> getActivityFeed(@RequestParam(defaultValue = "10") int limit) {
+        try {
+            List<Activity> activities = activityService.getRecentActivities(limit);
+            
+            if (activities.isEmpty()) {
+                // Fallback với mock data nếu không có hoạt động thực
+                List<Map<String, Object>> mockActivities = createMockActivityData();
+                
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", true);
+                response.put("data", mockActivities.subList(0, Math.min(limit, mockActivities.size())));
+                response.put("total", mockActivities.size());
+                response.put("message", "Lấy hoạt động thành công (mock data)");
+                
+                return ResponseEntity.ok(response);
+            }
+            
+            List<Map<String, Object>> activityResponses = activities.stream().map(activity -> {
+                String userName = activity.getUser() != null ? activity.getUser().getUsername() : "Hệ thống";
+                String userAvatar = activity.getUser() != null ? activity.getUser().getAvatar() : null;
+                
+                Map<String, Object> activityMap = new HashMap<>();
+                activityMap.put("id", activity.getId());
+                activityMap.put("activityType", activity.getActivityType());
+                activityMap.put("title", activity.getTitle());
+                activityMap.put("description", activity.getDescription());
+                activityMap.put("userName", userName);
+                activityMap.put("userAvatar", userAvatar);
+                activityMap.put("entityType", activity.getEntityType());
+                activityMap.put("entityId", activity.getEntityId());
+                activityMap.put("metadata", activity.getMetadata());
+                activityMap.put("createdAt", activity.getCreatedAt());
+                activityMap.put("timeAgo", calculateTimeAgo(activity.getCreatedAt().getTime()));
+                
+                return activityMap;
+            }).collect(Collectors.toList());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", activityResponses);
+            response.put("total", activityResponses.size());
+            response.put("message", "Lấy hoạt động thành công");
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            // Fallback với mock data nếu có lỗi
+            List<Map<String, Object>> mockActivities = createMockActivityData();
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", mockActivities.subList(0, Math.min(limit, mockActivities.size())));
+            response.put("total", mockActivities.size());
+            response.put("message", "Lấy hoạt động thành công (fallback to mock data)");
+            response.put("error", e.getMessage());
+            
+            return ResponseEntity.ok(response);
+        }
+    }
+
+    private List<Map<String, Object>> createMockActivityData() {
+        List<Map<String, Object>> mockActivities = new ArrayList<>();
+        
+        // Create sample activities with Vietnamese content
+        mockActivities.add(createMockActivity(1L, "ORDER_CREATED", "Đơn hàng mới #1234", 
+                "Đơn hàng trị giá 850.000đ được tạo", "admin", "2 phút trước"));
+        
+        mockActivities.add(createMockActivity(2L, "PRODUCT_UPDATED", "Cập nhật sản phẩm: Gạo ST25", 
+                "Thông tin sản phẩm đã được cập nhật", "admin", "5 phút trước"));
+        
+        mockActivities.add(createMockActivity(3L, "USER_REGISTERED", "Thành viên mới: nguyenvan123", 
+                "Người dùng mới đã đăng ký tài khoản", "system", "10 phút trước"));
+        
+        mockActivities.add(createMockActivity(4L, "ORDER_COMPLETED", "Hoàn thành đơn hàng #1230", 
+                "Đơn hàng đã được giao thành công", "admin", "15 phút trước"));
+        
+        mockActivities.add(createMockActivity(5L, "BLOG_CREATED", "Bài viết mới: Lợi ích của gạo hữu cơ", 
+                "Bài viết mới đã được xuất bản", "admin", "30 phút trước"));
+        
+        mockActivities.add(createMockActivity(6L, "PRODUCT_CREATED", "Sản phẩm mới: Gạo Jasmine cao cấp", 
+                "Sản phẩm mới đã được thêm vào hệ thống", "admin", "1 giờ trước"));
+        
+        mockActivities.add(createMockActivity(7L, "ORDER_UPDATED", "Cập nhật đơn hàng #1228", 
+                "Trạng thái đơn hàng đã được thay đổi", "admin", "2 giờ trước"));
+        
+        mockActivities.add(createMockActivity(8L, "USER_LOGIN", "Đăng nhập: thaithuy456", 
+                "Người dùng đã đăng nhập vào hệ thống", "system", "3 giờ trước"));
+        
+        return mockActivities;
+    }
+    
+    private Map<String, Object> createMockActivity(Long id, String type, String title, 
+                                                  String description, String user, String timeAgo) {
+        Map<String, Object> activity = new HashMap<>();
+        activity.put("id", id);
+        activity.put("activityType", type);
+        activity.put("title", title);
+        activity.put("description", description);
+        activity.put("userName", user);
+        activity.put("userAvatar", null);        activity.put("timeAgo", timeAgo);        activity.put("createdAt", new Date());
+        return activity;
+    }
+    
+    private String calculateTimeAgo(long timestamp) {
+        long now = System.currentTimeMillis();
+        long diff = now - timestamp;
+        
+        if (diff < 60000) { // < 1 minute
+            return "Vừa xong";
+        } else if (diff < 3600000) { // < 1 hour
+            return (diff / 60000) + " phút trước";
+        } else if (diff < 86400000) { // < 1 day
+            return (diff / 3600000) + " giờ trước";
+        } else if (diff < 2592000000L) { // < 30 days
+            return (diff / 86400000) + " ngày trước";
+        } else {
+            return (diff / 2592000000L) + " tháng trước";
+        }
+    }    @GetMapping("/setup-activity-table")
+    @Operation(summary = "Tạo bảng activity và dữ liệu mẫu (chỉ cho development)")
+    @PreAuthorize("permitAll()")
+    public ResponseEntity<?> setupActivityTable() {
+        try {
+            // Thực thi SQL tạo bảng và dữ liệu mẫu
+            String result = activityService.setupActivityTable();
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Bảng activity đã được tạo và thêm dữ liệu mẫu thành công");
+            response.put("details", result);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "Lỗi khi tạo bảng activity: " + e.getMessage());
+            response.put("error", e.toString());
+            
+            return ResponseEntity.status(500).body(response);
+        }
     }
 }

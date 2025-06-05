@@ -3,7 +3,7 @@ import api from './api';
 
 export class AdvancedAnalyticsService {
   constructor() {
-    this.baseURL = '/v1/analytics';
+    this.baseURL = '/analytics';
   }
 
   // Revenue Analytics
@@ -107,18 +107,24 @@ export class AdvancedAnalyticsService {
       console.error('Error fetching real-time metrics:', error);
       return this.getMockRealTimeData();
     }
-  }
-
-  // Activity feed
+  }  // Activity feed
   async getActivityFeed(limit = 10, filter = 'all') {
     try {
-      const response = await api.get(`${this.baseURL}/activities`, {
-        params: { limit, filter }
+      // Thử gọi endpoint thực trước
+      const response = await api.get(`${this.baseURL}/activity-feed`, {
+        params: { limit }
       });
       return response.data;
     } catch (error) {
-      console.error('Error fetching activity feed:', error);
-      return this.getMockActivityData();
+      console.error('Error fetching activity feed, trying mock endpoint:', error);
+      try {
+        // Fallback sang mock endpoint nếu endpoint thực lỗi auth
+        const mockResponse = await api.get('/dev/activity-feed-mock');
+        return mockResponse.data;
+      } catch (mockError) {
+        console.error('Error fetching mock activity feed:', mockError);
+        return this.getMockActivityData();
+      }
     }
   }
 

@@ -8,7 +8,7 @@ import com.naturegrain.model.request.CreateOrderRequest;
 
 public interface OrderService {
     
-    void placeOrder(CreateOrderRequest request);
+    Order placeOrder(CreateOrderRequest request);
 
     List<Order> getList();
     
@@ -30,4 +30,13 @@ public interface OrderService {
      * @return The number of updated OrderDetail records
      */
     int updateOrderDetailsWithProductReferences();
+    
+    /**
+     * Updates the status of an order
+     * 
+     * @param orderId The ID of the order to update
+     * @param status The new status for the order
+     * @return The updated Order
+     */
+    Order updateOrderStatus(Long orderId, String status);
 }

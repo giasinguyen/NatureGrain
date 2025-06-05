@@ -30,11 +30,9 @@ public class UserServiceImpl implements UserService {
     private RoleRepository roleRepository;
 
     @Autowired
-    private PasswordEncoder encoder;
-
-    @Override
+    private PasswordEncoder encoder;    @Override
     @Transactional
-    public void register(CreateUserRequest request) {
+    public User register(CreateUserRequest request) {
         User user = new User();
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
@@ -69,7 +67,8 @@ public class UserServiceImpl implements UserService {
             });
         }
         user.setRoles(roles);
-        userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        return savedUser;
     }
 
     @Override

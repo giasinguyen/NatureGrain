@@ -7,7 +7,7 @@ import com.naturegrain.model.request.UpdateProfileRequest;
 
 public interface UserService {
     
-    void register(CreateUserRequest request);
+    User register(CreateUserRequest request);
 
 
     User getUserByUsername(String username);

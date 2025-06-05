@@ -12,7 +12,7 @@ import { dashboardService } from '../../services/api';
 import AdminDebugger from '../../components/admin/AdminDebugger';
 import StatCard from '../../components/admin/StatCard';
 import WelcomeCard from '../../components/admin/WelcomeCard';
-import ActivityFeed from '../../components/admin/ActivityFeed';
+import RecentActivityFeed from '../../components/admin/RecentActivityFeed';
 import SalesChart from '../../components/admin/charts/SalesChart';
 import CategoryChart from '../../components/admin/charts/CategoryChart';
 import OrderStatusChart from '../../components/admin/charts/OrderStatusChart';
@@ -300,10 +300,9 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-        
-        {/* Activity Feed - Take up 1/3 of the width on large screens */}
+          {/* Activity Feed - Take up 1/3 of the width on large screens */}
         <div>
-          <ActivityFeed />
+          <RecentActivityFeed />
         </div>
       </div>
       

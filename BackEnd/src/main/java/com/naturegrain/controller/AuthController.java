@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.naturegrain.entity.User;
+import com.naturegrain.entity.ActivityType;
 import com.naturegrain.model.request.CreateUserRequest;
 import com.naturegrain.model.request.LoginRequest;
 import com.naturegrain.model.response.MessageResponse;
@@ -32,6 +33,7 @@ import com.naturegrain.model.response.UserInfoResponse;
 import com.naturegrain.repository.UserRepository;
 import com.naturegrain.security.jwt.JwtUtils;
 import com.naturegrain.security.service.UserDetailsImpl;
+import com.naturegrain.service.ActivityService;
 import com.naturegrain.service.UserService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -43,7 +45,8 @@ import io.swagger.v3.oas.annotations.Operation;
 public class AuthController {
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
-    @Autowired    private AuthenticationManager authenticationManager;
+    @Autowired
+    private AuthenticationManager authenticationManager;
 
     @Autowired
     private JwtUtils jwtUtils;
@@ -53,6 +56,9 @@ public class AuthController {
     
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private ActivityService activityService;
 
     @PostMapping("/login")
     @Operation(summary="Đăng nhập")
@@ -72,10 +78,19 @@ public class AuthController {
         
         // Lấy thêm thông tin người dùng từ database
         User user = userService.getUserByUsername(userDetails.getUsername());
-        
-        // Update last login time
+          // Update last login time
         user.setLastLogin(new Date());
         userRepository.save(user);
+        
+        // Log activity for user login
+        try {
+            String title = "Người dùng đăng nhập";
+            String description = String.format("Người dùng %s đã đăng nhập vào hệ thống", user.getUsername());
+            activityService.createActivity(ActivityType.USER_LOGIN, title, description, user);
+        } catch (Exception e) {
+            // Log error but don't fail the login
+            System.err.println("Failed to log login activity: " + e.getMessage());
+        }
 
         // Trả về đầy đủ thông tin người dùng
         return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
@@ -91,13 +106,22 @@ public class AuthController {
                         user.getAddress(),
                         user.getCountry(),
                         user.getState()));
-    }
-
-    @PostMapping("/register")
+    }    @PostMapping("/register")
     @Operation(summary="Đăng ký")
     public ResponseEntity<?> register(@Valid @RequestBody CreateUserRequest request){
-      
-        userService.register(request);
+        User newUser = userService.register(request);
+        
+        // Log activity for user registration
+        try {
+            if (newUser != null) {
+                String title = "Người dùng mới đăng ký";
+                String description = String.format("Người dùng %s đã đăng ký tài khoản mới", newUser.getUsername());
+                activityService.createActivity(ActivityType.USER_REGISTERED, title, description, newUser);
+            }
+        } catch (Exception e) {
+            // Log error but don't fail the registration
+            System.err.println("Failed to log registration activity: " + e.getMessage());
+        }
       
         return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
     }
