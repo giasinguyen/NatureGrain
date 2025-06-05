@@ -169,7 +169,6 @@ const AdminLayout = () => {
 
       {/* Main content */}
       <div className="flex flex-col flex-1 overflow-hidden">
-        /* Top navbar */
         <div className="relative z-10 flex flex-shrink-0 h-16 bg-white shadow">
           <button
             className="px-4 text-gray-500 border-r border-gray-200 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-green-500 lg:hidden"

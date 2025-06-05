@@ -426,7 +426,12 @@ export const dashboardService = {
   getRecentOrders: (limit = 5) => api.get(`/dashboard/recent-orders?limit=${limit}`),
   getTopProducts: (limit = 5) => api.get(`/dashboard/top-products?limit=${limit}`),
   getSalesChartData: (days = 7) => api.get(`/dashboard/sales-chart?days=${days}`),
-  getCategoryBreakdown: () => api.get("/dashboard/category-breakdown")
+  getCategoryBreakdown: () => api.get("/dashboard/category-breakdown"),
+  // Enhanced analytics for dashboard
+  getOrderStatusDistribution: () => api.get("/analytics/order-status-distribution"),
+  getSalesAnalytics: (timeframe = "week") => api.get(`/analytics/sales-trends?timeframe=${timeframe}&timespan=30`),
+  getCustomerGrowth: (days = 30) => api.get(`/analytics/user-growth?days=${days}`),
+  getRealtimeMetrics: () => api.get("/analytics/realtime-metrics")
 };
 
 // Analytics Services (Admin)

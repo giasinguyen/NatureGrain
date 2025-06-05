@@ -9,13 +9,13 @@ import {
 } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
 import { dashboardService } from '../../services/api';
-import SalesChart from '../../components/admin/SalesChart';
-import CategoryChart from '../../components/admin/CategoryChart';
-import { CustomerRetentionChart, OrderStatusDistributionChart } from '../../components/admin/AnalyticsCharts';
 import AdminDebugger from '../../components/admin/AdminDebugger';
 import StatCard from '../../components/admin/StatCard';
 import WelcomeCard from '../../components/admin/WelcomeCard';
 import ActivityFeed from '../../components/admin/ActivityFeed';
+import SalesChart from '../../components/admin/charts/SalesChart';
+import CategoryChart from '../../components/admin/charts/CategoryChart';
+import OrderStatusChart from '../../components/admin/charts/OrderStatusChart';
 
 // Format date for orders - handles both createAt and createdAt fields
 const formatOrderDate = (order) => {
@@ -255,8 +255,7 @@ const Dashboard = () => {
       {/* Dashboard Main Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Charts - Take up 2/3 of the width on large screens */}
-        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-          {/* Sales Chart */}
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">          {/* Sales Chart */}
           <div className="bg-white rounded-lg shadow-md p-4">
             <h2 className="text-lg font-medium text-gray-800 mb-4 flex items-center">
               <ArrowTrendingUpIcon className="h-5 w-5 mr-2 text-green-500" />
@@ -269,12 +268,9 @@ const Dashboard = () => {
                 </div>
               </div>
             </h2>
-            <div className="h-[300px] sm:h-[350px] overflow-hidden">
-              <SalesChart />
-            </div>
+            <SalesChart days={7} />
           </div>
-          
-          {/* Category & Order Distribution */}
+            {/* Category & Order Distribution */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <div className="bg-white rounded-lg shadow-md p-4">
               <h2 className="text-lg font-medium text-gray-800 mb-4 flex items-center">
@@ -287,9 +283,7 @@ const Dashboard = () => {
                   </div>
                 </div>
               </h2>
-              <div className="h-[200px] sm:h-[220px]">
-                <CategoryChart />
-              </div>
+              <CategoryChart />
             </div>
             <div className="bg-white rounded-lg shadow-md p-4">
               <h2 className="text-lg font-medium text-gray-800 mb-4 flex items-center">
@@ -302,9 +296,7 @@ const Dashboard = () => {
                   </div>
                 </div>
               </h2>
-              <div className="h-[200px] sm:h-[220px]">
-                <OrderStatusDistributionChart />
-              </div>
+              <OrderStatusChart />
             </div>
           </div>
         </div>
