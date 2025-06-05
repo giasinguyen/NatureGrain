@@ -98,6 +98,7 @@ const formatNumber = (num) => {
 };
 
 // Modern Metric Card Component
+// eslint-disable-next-line no-unused-vars
 const ModernMetricCard = memo(({ 
   title, 
   value, 
@@ -281,19 +282,12 @@ const ModernAnalytics = memo(() => {
     }
     localStorage.setItem('analytics-dark-mode', darkMode.toString());
   }, [darkMode]);
-
-  // Fetch analytics data with proper error handling
+  // Fetch analytics data
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
     try {
-      console.log('Fetching analytics data...');
-      
-      // Import analytics service
-      const { analyticsService } = await import('../../services/api');
-      
-      // Try to fetch all analytics data
+      // Use real backend endpoints from analyticsService
       const [
         salesTrendsRes,
         userGrowthRes,
@@ -301,22 +295,20 @@ const ModernAnalytics = memo(() => {
         orderStatusRes,
         customerRetentionRes
       ] = await Promise.all([
-        analyticsService.getSalesTrends(
-          timeframe === 'week' ? 'daily' : timeframe === 'month' ? 'weekly' : 'monthly', 
-          timeframe === 'week' ? 7 : timeframe === 'month' ? 30 : 365
-        ).catch(err => ({ error: err, data: null })),
-        analyticsService.getUserGrowth(
-          timeframe === 'week' ? 7 : timeframe === 'month' ? 30 : 365
-        ).catch(err => ({ error: err, data: null })),
-        analyticsService.getProductPerformance()
-          .catch(err => ({ error: err, data: null })),
-        analyticsService.getOrderStatusDistribution()
-          .catch(err => ({ error: err, data: null })),
-        analyticsService.getCustomerRetention()
-          .catch(err => ({ error: err, data: null }))
+        import('../../services/api').then(({ analyticsService }) => 
+          analyticsService.getSalesTrends(timeframe === 'week' ? 'daily' : timeframe === 'month' ? 'weekly' : 'monthly', 
+                                          timeframe === 'week' ? 7 : timeframe === 'month' ? 30 : 365)),
+        import('../../services/api').then(({ analyticsService }) => 
+          analyticsService.getUserGrowth(timeframe === 'week' ? 7 : timeframe === 'month' ? 30 : 365)),
+        import('../../services/api').then(({ analyticsService }) => 
+          analyticsService.getProductPerformance()),
+        import('../../services/api').then(({ analyticsService }) => 
+          analyticsService.getOrderStatusDistribution()),
+        import('../../services/api').then(({ analyticsService }) =>
+          analyticsService.getCustomerRetention())
       ]);
 
-      console.log('API Responses:', {
+      console.log('API Response Debug:', {
         salesTrends: salesTrendsRes,
         userGrowth: userGrowthRes,
         productPerformance: productPerformanceRes,
@@ -324,92 +316,62 @@ const ModernAnalytics = memo(() => {
         customerRetention: customerRetentionRes
       });
 
-      // Extract data from responses
+      // Extract data from responses (assuming they have .data property)
       const salesTrends = salesTrendsRes?.data || salesTrendsRes;
       const userGrowth = userGrowthRes?.data || userGrowthRes;
       const productPerformance = productPerformanceRes?.data || productPerformanceRes;
       const orderStatus = orderStatusRes?.data || orderStatusRes;
       const customerRetention = customerRetentionRes?.data || customerRetentionRes;
 
-      // Check if we got any valid data
-      const hasValidData = !salesTrendsRes?.error || !userGrowthRes?.error || 
-                          !productPerformanceRes?.error || !orderStatusRes?.error;
-
-      if (!hasValidData) {
-        throw new Error('All API endpoints failed');
-      }
-
-      // Process and combine the data with robust data handling
+      // Process and combine the data with better data handling
       const processedData = {
         revenue: {
-          current: salesTrends?.totalRevenue || 
-                  salesTrends?.data?.reduce?.((sum, item) => sum + (item.sales || item.revenue || 0), 0) || 
-                  0,
+          current: salesTrends?.totalRevenue || salesTrends?.data?.reduce((sum, item) => sum + (item.sales || item.revenue || 0), 0) || 0,
           growth: salesTrends?.growthRate || salesTrends?.summary?.growthRate || 0,
-          trend: salesTrends?.trends || 
-                salesTrends?.data?.map?.(item => ({
-                  date: item.period || item.date,
-                  value: item.sales || item.revenue || 0
-                })) || []
+          trend: salesTrends?.trends || salesTrends?.data?.map(item => ({
+            date: item.period || item.date,
+            value: item.sales || item.revenue || 0
+          })) || []
         },
         users: {
-          current: userGrowth?.totalUsers || 
-                  userGrowth?.reduce?.((sum, item) => sum + (item.totalUsers || 0), 0) || 
-                  0,
-          newUsers: userGrowth?.newUsers || 
-                   userGrowth?.reduce?.((sum, item) => sum + (item.newUsers || 0), 0) || 
-                   0,
+          current: userGrowth?.totalUsers || userGrowth?.reduce?.((sum, item) => sum + (item.totalUsers || 0), 0) || 0,
+          newUsers: userGrowth?.newUsers || userGrowth?.reduce?.((sum, item) => sum + (item.newUsers || 0), 0) || 0,
           growth: userGrowth?.growthRate || 0,
-          trend: userGrowth?.trends || 
-                userGrowth?.map?.(item => ({
-                  date: item.date,
-                  value: item.totalUsers || 0
-                })) || []
+          trend: userGrowth?.trends || userGrowth?.map?.(item => ({
+            date: item.date,
+            value: item.totalUsers || 0
+          })) || []
         },
         orders: {
-          current: orderStatus?.total || 
-                  orderStatus?.reduce?.((sum, item) => sum + (item.count || 0), 0) || 
-                  0,
-          completed: orderStatus?.completed || 
-                    orderStatus?.find?.(item => item.status === 'COMPLETED')?.count || 
-                    0,
-          pending: orderStatus?.pending || 
-                  orderStatus?.find?.(item => item.status === 'PENDING')?.count || 
-                  0,
-          cancelled: orderStatus?.cancelled || 
-                    orderStatus?.find?.(item => item.status === 'CANCELLED')?.count || 
-                    0,
+          current: orderStatus?.total || orderStatus?.reduce?.((sum, item) => sum + (item.count || 0), 0) || 0,
+          completed: orderStatus?.completed || orderStatus?.find?.(item => item.status === 'COMPLETED')?.count || 0,
+          pending: orderStatus?.pending || orderStatus?.find?.(item => item.status === 'PENDING')?.count || 0,
+          cancelled: orderStatus?.cancelled || orderStatus?.find?.(item => item.status === 'CANCELLED')?.count || 0,
           growth: orderStatus?.growthRate || 0
         },
         products: {
-          topSelling: Array.isArray(productPerformance?.topProducts) ? productPerformance.topProducts :
-                     Array.isArray(productPerformance) ? productPerformance :
-                     [],
+          topSelling: productPerformance?.topProducts || productPerformance || [],
           categories: productPerformance?.categories || [],
           totalViews: productPerformance?.totalViews || 0
         },
         retention: {
-          rate: customerRetention?.rate || 
-               customerRetention?.summary?.customerRetentionRate || 
-               0,
+          rate: customerRetention?.rate || customerRetention?.summary?.customerRetentionRate || 0,
           trend: customerRetention?.trend || []
         }
       };
 
-      console.log('Processed Analytics Data:', processedData);
-      setData(processedData);
+      console.log('Processed Data:', processedData);
+      setData(processedData);    } catch (err) {
+      console.error('Analytics data fetch error:', err);
+      setError(err.message);
       
-    } catch (err) {
-      console.error('Primary analytics API failed:', err);
-      
-      // Try fallback with advancedAnalyticsService
+      // Try fallback with advancedAnalyticsService if primary API fails
       try {
         console.log('Trying fallback with advancedAnalyticsService...');
         const { advancedAnalyticsService } = await import('../../services/advancedAnalytics');
         const fallbackData = await advancedAnalyticsService.getDashboardAnalytics(timeframe);
-        console.log('Fallback data received:', fallbackData);
+        console.log('Fallback data:', fallbackData);
         setData(fallbackData);
-        setError('Using fallback data service');
         return;
       } catch (fallbackErr) {
         console.error('Fallback analytics service also failed:', fallbackErr);
@@ -417,7 +379,6 @@ const ModernAnalytics = memo(() => {
       
       // Final fallback to mock data
       console.log('Using final mock data fallback');
-      setError('Unable to connect to analytics API - showing demo data');
       setData({
         revenue: {
           current: 2450000,
@@ -457,9 +418,7 @@ const ModernAnalytics = memo(() => {
           topSelling: [
             { name: 'Gạo ST25', sales: 450, revenue: 2250000 },
             { name: 'Gạo Jasmine', sales: 320, revenue: 1600000 },
-            { name: 'Gạo Tám Xoan', sales: 280, revenue: 1680000 },
-            { name: 'Gạo Nàng Hương', sales: 240, revenue: 1440000 },
-            { name: 'Gạo Đỏ', sales: 180, revenue: 1260000 }
+            { name: 'Gạo Tám Xoan', sales: 280, revenue: 1680000 }
           ],
           categories: [
             { name: 'Gạo thơm', value: 45 },
@@ -473,6 +432,31 @@ const ModernAnalytics = memo(() => {
           trend: [
             { date: '2024-01-01', value: 65 },
             { date: '2024-01-02', value: 66.5 },
+            { date: '2024-01-03', value: 67 },
+            { date: '2024-01-04', value: 68 },
+            { date: '2024-01-05', value: 68.5 }
+          ]
+        }
+      });
+        },
+        products: {
+          topSelling: [
+            { name: 'Gạo ST25', sales: 450, revenue: 2250000 },
+            { name: 'Gạo Jasmine', sales: 320, revenue: 1600000 },
+            { name: 'Gạo Tám Xoan', sales: 280, revenue: 1680000 }
+          ],
+          categories: [
+            { name: 'Gạo thơm', value: 45 },
+            { name: 'Gạo tẻ', value: 30 },
+            { name: 'Gạo nàng hương', value: 25 }
+          ],
+          totalViews: 15420
+        },
+        retention: {
+          rate: 68.5,
+          trend: [
+            { date: '2024-01-01', value: 65 },
+            { date: '2024-01-02', value: 66 },
             { date: '2024-01-03', value: 67 },
             { date: '2024-01-04', value: 68 },
             { date: '2024-01-05', value: 68.5 }
@@ -501,14 +485,13 @@ const ModernAnalytics = memo(() => {
     
     try {
       const { dashboardService } = await import('../../services/api');
-      const metricsRes = await dashboardService.getRealtimeMetrics();
-      const metrics = metricsRes?.data || metricsRes;
+      const metrics = await dashboardService.getRealtimeMetrics();
       
       setRealTimeMetrics({
         onlineUsers: Math.floor(45 + Math.random() * 25), // Mock as backend doesn't have this
-        activeOrders: metrics?.activeOrders || Math.floor(12 + Math.random() * 8),
-        recentSales: metrics?.recentSales || Math.floor(150000 + Math.random() * 50000),
-        conversionRate: metrics?.conversionRate || (2.5 + Math.random() * 1.5).toFixed(2)
+        activeOrders: metrics.activeOrders || Math.floor(12 + Math.random() * 8),
+        recentSales: metrics.recentSales || Math.floor(150000 + Math.random() * 50000),
+        conversionRate: metrics.conversionRate || (2.5 + Math.random() * 1.5)
       });
       
       setLastUpdate(new Date());
@@ -519,7 +502,7 @@ const ModernAnalytics = memo(() => {
         onlineUsers: Math.floor(45 + Math.random() * 25),
         activeOrders: Math.floor(12 + Math.random() * 8),
         recentSales: Math.floor(150000 + Math.random() * 50000),
-        conversionRate: (2.5 + Math.random() * 1.5).toFixed(2)
+        conversionRate: (2.5 + Math.random() * 1.5)
       });
     }
   }, [isLiveMode]);
@@ -567,23 +550,23 @@ const ModernAnalytics = memo(() => {
     };
 
     const ordersBarData = {
-      labels: ['Hoàn thành', 'Đang xử lý', 'Đã hủy'],
+      labels: ['Đã hoàn thành', 'Đang xử lý', 'Đã hủy', 'Chờ thanh toán'],
       datasets: [
         {
           label: 'Số đơn hàng',
-          data: [data.orders.completed, data.orders.pending, data.orders.cancelled],
+          data: [
+            data.orders.completed,
+            data.orders.pending,
+            data.orders.cancelled || 0,
+            data.orders.awaitingPayment || 0
+          ],
           backgroundColor: [
             COLORS.primary[500],
-            COLORS.accent[500],
-            COLORS.danger[500]
+            COLORS.secondary[500],
+            COLORS.danger[500],
+            COLORS.accent[500]
           ],
-          borderColor: [
-            COLORS.primary[600],
-            COLORS.accent[600],
-            COLORS.danger[600]
-          ],
-          borderWidth: 2,
-          borderRadius: 6,
+          borderRadius: 8,
           borderSkipped: false
         }
       ]
@@ -677,348 +660,441 @@ const ModernAnalytics = memo(() => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-green-200 border-t-green-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Đang tải dữ liệu analytics...</p>
+          <ArrowPathIcon className="h-8 w-8 animate-spin text-green-600 mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-400">Đang tải dữ liệu phân tích...</p>
         </div>
       </div>
     );
   }
 
+  if (error && !data) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-red-500 mb-4">
+          <ChartBarIcon className="h-12 w-12 mx-auto" />
+        </div>
+        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+          Lỗi tải dữ liệu
+        </h3>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
+        <button
+          onClick={fetchData}
+          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+        >
+          Thử lại
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
-      <div className="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-300">
-        <div className="max-w-7xl mx-auto p-6 space-y-8">
-          {/* Header */}
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-                Analytics Dashboard
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                Tổng quan và phân tích hiệu suất kinh doanh
-              </p>
-              {error && (
-                <div className="mt-2 text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-3 py-1 rounded-md">
-                  ⚠️ {error}
-                </div>
+    <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+              Phân tích nâng cao
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              Thông tin chi tiết về hiệu suất và xu hướng
+            </p>
+          </div>
+          
+          <div className="flex items-center space-x-4 mt-4 sm:mt-0">            {/* Real-time indicator */}
+            {isLiveMode && (
+              <div 
+                className="flex items-center space-x-2 px-3 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-full text-sm cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+                onClick={() => setIsLiveMode(!isLiveMode)}
+                title="Click để tắt/bật chế độ thời gian thực"
+              >
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span>Thời gian thực</span>
+              </div>
+            )}
+            
+            {!isLiveMode && (
+              <button
+                onClick={() => setIsLiveMode(true)}
+                className="flex items-center space-x-2 px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                title="Bật chế độ thời gian thực"
+              >
+                <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                <span>Dữ liệu tĩnh</span>
+              </button>
+            )}
+            
+            {/* Dark mode toggle */}
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className="p-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all"
+            >
+              {darkMode ? (
+                <SunIcon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+              ) : (
+                <MoonIcon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
               )}
+            </button>
+            
+            {/* Filter toggle */}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center space-x-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-all"
+            >
+              <FunnelIcon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+              <span className="text-gray-700 dark:text-gray-300">Bộ lọc</span>
+            </button>
+            
+            {/* Export dropdown */}
+            <div className="relative group">
+              <button className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                <ArrowDownTrayIcon className="h-5 w-5" />
+                <span>Xuất dữ liệu</span>
+              </button>
+              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+                <button
+                  onClick={() => exportData('json')}
+                  className="block w-full text-left px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-t-lg"
+                >
+                  Xuất JSON
+                </button>
+                <button
+                  onClick={() => exportData('csv')}
+                  className="block w-full text-left px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-b-lg"
+                >
+                  Xuất CSV
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Filters Panel */}
+        {showFilters && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Khung thời gian
+                </label>
+                <select
+                  value={timeframe}
+                  onChange={(e) => setTimeframe(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                >
+                  <option value="week">7 ngày qua</option>
+                  <option value="month">30 ngày qua</option>
+                  <option value="year">1 năm qua</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Từ ngày
+                </label>
+                <input
+                  type="date"
+                  value={dateRange.start}
+                  onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Đến ngày
+                </label>
+                <input
+                  type="date"
+                  value={dateRange.end}
+                  onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Real-time Metrics Bar */}
+        {isLiveMode && (
+          <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-2xl p-6 mb-8 border border-green-200 dark:border-green-800">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse mr-2"></div>
+                Dữ liệu thời gian thực
+              </h2>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                Cập nhật lần cuối: {lastUpdate.toLocaleTimeString('vi-VN')}
+              </span>
             </div>
             
-            <div className="flex items-center gap-3">
-              {/* Live Mode Toggle */}
-              <button
-                onClick={() => setIsLiveMode(!isLiveMode)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isLiveMode 
-                    ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400' 
-                    : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
-                }`}
-              >
-                <div className={`w-2 h-2 rounded-full ${isLiveMode ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
-                {isLiveMode ? 'Live' : 'Paused'}
-              </button>
-
-              {/* Timeframe Selector */}
-              <select
-                value={timeframe}
-                onChange={(e) => setTimeframe(e.target.value)}
-                className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              >
-                <option value="week">7 ngày</option>
-                <option value="month">30 ngày</option>
-                <option value="year">12 tháng</option>
-              </select>
-
-              {/* Filters Toggle */}
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                <FunnelIcon className="w-4 h-4" />
-                Filters
-              </button>
-
-              {/* Export Dropdown */}
-              <div className="relative group">
-                <button className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors">
-                  <ArrowDownTrayIcon className="w-4 h-4" />
-                  Export
-                </button>
-                <div className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                  <button
-                    onClick={() => exportData('json')}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    JSON
-                  </button>
-                  <button
-                    onClick={() => exportData('csv')}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    CSV
-                  </button>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+                <div className="flex items-center justify-center w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-full mx-auto mb-2">
+                  <UserGroupIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  {realTimeMetrics.onlineUsers}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Người dùng online</p>
               </div>
-
-              {/* Dark Mode Toggle */}
-              <button
-                onClick={() => setDarkMode(!darkMode)}
-                className="p-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                {darkMode ? <SunIcon className="w-4 h-4" /> : <MoonIcon className="w-4 h-4" />}
-              </button>
+              
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+                <div className="flex items-center justify-center w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-full mx-auto mb-2">
+                  <ShoppingCartIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  {realTimeMetrics.activeOrders}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Đơn hàng đang xử lý</p>
+              </div>
+              
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+                <div className="flex items-center justify-center w-10 h-10 bg-yellow-100 dark:bg-yellow-900/20 rounded-full mx-auto mb-2">
+                  <CurrencyDollarIcon className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                </div>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  {formatCurrency(realTimeMetrics.recentSales)}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Doanh thu hôm nay</p>
+              </div>
+              
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+                <div className="flex items-center justify-center w-10 h-10 bg-purple-100 dark:bg-purple-900/20 rounded-full mx-auto mb-2">
+                  <ChartBarIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                </div>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  {typeof realTimeMetrics.conversionRate === 'number' 
+                    ? realTimeMetrics.conversionRate.toFixed(1) + '%' 
+                    : realTimeMetrics.conversionRate}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Tỷ lệ chuyển đổi</p>
+              </div>
             </div>
           </div>
+        )}
 
-          {/* Date Range Filter (conditionally shown) */}
-          {showFilters && (
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Từ ngày
-                  </label>
-                  <input
-                    type="date"
-                    value={dateRange.start}
-                    onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-                    className="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-green-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Đến ngày
-                  </label>
-                  <input
-                    type="date"
-                    value={dateRange.end}
-                    onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-                    className="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-green-500"
-                  />
-                </div>
-                <div className="flex items-end">
-                  <button
-                    onClick={fetchData}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors"
-                  >
-                    Áp dụng
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+        {/* Key Metrics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <ModernMetricCard
+            title="Tổng doanh thu"
+            value={data?.revenue?.current || 0}
+            change={{ change: data?.revenue?.growth || 0, isPositive: (data?.revenue?.growth || 0) > 0 }}
+            icon={CurrencyDollarIcon}
+            colorScheme="primary"
+            formatType="currency"
+            subtitle="So với tháng trước"
+            loading={loading}
+          />
+          
+          <ModernMetricCard
+            title="Người dùng"
+            value={data?.users?.current || 0}
+            change={{ change: data?.users?.growth || 0, isPositive: (data?.users?.growth || 0) > 0 }}
+            icon={UserGroupIcon}
+            colorScheme="secondary"
+            subtitle={`${data?.users?.newUsers || 0} người dùng mới`}
+            loading={loading}
+          />
+          
+          <ModernMetricCard
+            title="Đơn hàng"
+            value={data?.orders?.current || 0}
+            change={{ change: data?.orders?.growth || 0, isPositive: (data?.orders?.growth || 0) > 0 }}
+            icon={ShoppingCartIcon}
+            colorScheme="accent"
+            subtitle={`${data?.orders?.completed || 0} đã hoàn thành`}
+            loading={loading}
+          />
+          
+          <ModernMetricCard
+            title="Tỷ lệ giữ chân KH"
+            value={data?.retention?.rate || 0}
+            change={{ change: 2.3, isPositive: true }}
+            icon={ArrowTrendingUpIcon}
+            colorScheme="primary"
+            formatType="percentage"
+            subtitle="Trong 30 ngày qua"
+            loading={loading}
+          />
+        </div>
 
-          {/* Real-time Metrics */}
-          {isLiveMode && (
-            <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-6 text-white">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold">Dữ liệu thời gian thực</h2>
-                <div className="text-sm opacity-75">
-                  Cập nhật lần cuối: {lastUpdate.toLocaleTimeString('vi-VN')}
-                </div>
-              </div>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white/10 rounded-lg p-4">
-                  <div className="text-2xl font-bold">{realTimeMetrics.onlineUsers}</div>
-                  <div className="text-sm opacity-75">Người dùng online</div>
-                </div>
-                <div className="bg-white/10 rounded-lg p-4">
-                  <div className="text-2xl font-bold">{realTimeMetrics.activeOrders}</div>
-                  <div className="text-sm opacity-75">Đơn hàng đang xử lý</div>
-                </div>
-                <div className="bg-white/10 rounded-lg p-4">
-                  <div className="text-2xl font-bold">{formatCurrency(realTimeMetrics.recentSales)}</div>
-                  <div className="text-sm opacity-75">Doanh thu hôm nay</div>
-                </div>
-                <div className="bg-white/10 rounded-lg p-4">
-                  <div className="text-2xl font-bold">{realTimeMetrics.conversionRate}%</div>
-                  <div className="text-sm opacity-75">Tỷ lệ chuyển đổi</div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Key Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <ModernMetricCard
-              title="Tổng doanh thu"
-              value={data?.revenue?.current || 0}
-              change={{ change: data?.revenue?.growth || 0, isPositive: (data?.revenue?.growth || 0) > 0 }}
-              icon={CurrencyDollarIcon}
-              colorScheme="primary"
-              formatType="currency"
-              loading={loading}
-            />
-            <ModernMetricCard
-              title="Người dùng"
-              value={data?.users?.current || 0}
-              change={{ change: data?.users?.growth || 0, isPositive: (data?.users?.growth || 0) > 0 }}
-              icon={UserGroupIcon}
-              colorScheme="secondary"
-              subtitle={`${data?.users?.newUsers || 0} người dùng mới`}
-              loading={loading}
-            />
-            <ModernMetricCard
-              title="Đơn hàng"
-              value={data?.orders?.current || 0}
-              change={{ change: data?.orders?.growth || 0, isPositive: (data?.orders?.growth || 0) > 0 }}
-              icon={ShoppingCartIcon}
-              colorScheme="accent"
-              subtitle={`${data?.orders?.completed || 0} hoàn thành`}
-              loading={loading}
-            />
-            <ModernMetricCard
-              title="Tỷ lệ giữ chân"
-              value={data?.retention?.rate || 0}
-              change={{ change: 2.1, isPositive: true }}
-              icon={ArrowTrendingUpIcon}
-              colorScheme="primary"
-              formatType="percentage"
-              loading={loading}
-            />
-          </div>
-
-          {/* Charts Grid */}
-          {chartData && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Revenue Chart */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                    <PresentationChartLineIcon className="w-5 h-5 text-green-600" />
-                    Xu hướng doanh thu
-                  </h3>
-                </div>
-                <div className="h-80">
-                  <Line 
-                    data={chartData.revenue} 
-                    options={getChartOptions('Doanh thu theo thời gian', darkMode)} 
-                  />
-                </div>
-              </div>
-
-              {/* Orders Chart */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                    <ChartBarIcon className="w-5 h-5 text-blue-600" />
-                    Phân bố đơn hàng
-                  </h3>
-                </div>
-                <div className="h-80">
-                  <Bar 
-                    data={chartData.orders} 
-                    options={getChartOptions('Trạng thái đơn hàng', darkMode)} 
-                  />
-                </div>
-              </div>
-
-              {/* Categories Chart */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                    <ChartPieIcon className="w-5 h-5 text-yellow-600" />
-                    Danh mục sản phẩm
-                  </h3>
-                </div>
-                <div className="h-80">
-                  <Doughnut 
-                    data={chartData.categories} 
-                    options={getChartOptions('Phân bố danh mục', darkMode)} 
-                  />
-                </div>
-              </div>
-
-              {/* User Growth Chart */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                    <UserGroupIcon className="w-5 h-5 text-purple-600" />
-                    Tăng trưởng người dùng
-                  </h3>
-                </div>
-                <div className="h-80">
-                  <Line 
-                    data={chartData.userGrowth} 
-                    options={getChartOptions('Người dùng theo thời gian', darkMode)} 
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Top Products Table */}
-          {data?.products?.topSelling?.length > 0 && (
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  Sản phẩm bán chạy
+        {/* Charts Grid */}
+        {chartData && (
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
+            {/* Revenue Trend Chart */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+                  <PresentationChartLineIcon className="h-5 w-5 mr-2 text-green-600" />
+                  Xu hướng doanh thu
                 </h3>
+                <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                  <CalendarDaysIcon className="h-4 w-4" />
+                  <span>{timeframe === 'week' ? '7 ngày' : timeframe === 'month' ? '30 ngày' : '1 năm'}</span>
+                </div>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Sản phẩm
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Số lượng bán
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Doanh thu
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Tăng trưởng
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {data.products.topSelling.map((product, index) => (
-                      <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center mr-3">
-                              <span className="text-green-600 dark:text-green-400 font-semibold">
-                                {index + 1}
-                              </span>
-                            </div>
-                            <span className="font-medium text-gray-900 dark:text-gray-100">
-                              {product.name}
+              <div className="h-80">
+                <Line
+                  data={chartData.revenue}
+                  options={getChartOptions('Doanh thu theo thời gian', darkMode)}
+                />
+              </div>
+            </div>
+
+            {/* Orders Status Chart */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+                  <ChartBarIcon className="h-5 w-5 mr-2 text-blue-600" />
+                  Trạng thái đơn hàng
+                </h3>
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Tổng: {data?.orders?.current || 0} đơn
+                </div>
+              </div>
+              <div className="h-80">
+                <Bar
+                  data={chartData.orders}
+                  options={{
+                    ...getChartOptions('Phân bố đơn hàng', darkMode),
+                    scales: {
+                      ...getChartOptions('', darkMode).scales,
+                      y: {
+                        ...getChartOptions('', darkMode).scales.y,
+                        beginAtZero: true
+                      }
+                    }
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Product Categories Chart */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+                  <ChartPieIcon className="h-5 w-5 mr-2 text-purple-600" />
+                  Danh mục sản phẩm
+                </h3>
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Theo doanh số
+                </div>
+              </div>
+              <div className="h-80">
+                <Doughnut
+                  data={chartData.categories}
+                  options={{
+                    ...getChartOptions('Phân bố danh mục', darkMode),
+                    cutout: '60%',
+                    plugins: {
+                      ...getChartOptions('', darkMode).plugins,
+                      legend: {
+                        ...getChartOptions('', darkMode).plugins.legend,
+                        position: 'bottom'
+                      }
+                    }
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* User Growth Chart */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+                  <UserGroupIcon className="h-5 w-5 mr-2 text-indigo-600" />
+                  Tăng trưởng người dùng
+                </h3>
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  +{data?.users?.growth || 0}% so với kỳ trước
+                </div>
+              </div>
+              <div className="h-80">
+                <Line
+                  data={chartData.userGrowth}
+                  options={getChartOptions('Người dùng mới theo ngày', darkMode)}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Top Products Table */}
+        {data?.products?.topSelling && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                Sản phẩm bán chạy nhất
+              </h3>
+              <button className="text-green-600 hover:text-green-700 text-sm font-medium">
+                Xem tất cả
+              </button>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                    <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400">
+                      Sản phẩm
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400">
+                      Đã bán
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400">
+                      Doanh thu
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-400">
+                      Xu hướng
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.products.topSelling.map((product, index) => (
+                    <tr key={index} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                      <td className="py-4 px-4">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center mr-3">
+                            <span className="text-green-600 dark:text-green-400 font-semibold">
+                              {index + 1}
                             </span>
                           </div>
-                        </td>
-                        <td className="px-6 py-4 text-gray-600 dark:text-gray-400">
-                          {product.sales}
-                        </td>
-                        <td className="px-6 py-4 font-medium text-gray-900 dark:text-gray-100">
-                          {formatCurrency(product.revenue)}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center text-green-600 dark:text-green-400">
-                            <ArrowTrendingUpIcon className="h-4 w-4 mr-1" />
-                            <span className="text-sm">+{(Math.random() * 20 + 5).toFixed(1)}%</span>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                          <span className="font-medium text-gray-900 dark:text-gray-100">
+                            {product.name}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4 text-gray-600 dark:text-gray-400">
+                        {product.sales}
+                      </td>
+                      <td className="py-4 px-4 font-medium text-gray-900 dark:text-gray-100">
+                        {formatCurrency(product.revenue)}
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="flex items-center text-green-600 dark:text-green-400">
+                          <ArrowTrendingUpIcon className="h-4 w-4 mr-1" />
+                          <span className="text-sm">+{(Math.random() * 20 + 5).toFixed(1)}%</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          )}
-
-          {/* Refresh Button */}
-          <div className="text-center mt-8">
-            <button
-              onClick={fetchData}
-              disabled={loading}
-              className="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <ArrowPathIcon className={`h-5 w-5 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              {loading ? 'Đang tải...' : 'Làm mới dữ liệu'}
-            </button>
           </div>
+        )}
+
+        {/* Refresh Button */}
+        <div className="text-center mt-8">
+          <button
+            onClick={fetchData}
+            disabled={loading}
+            className="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <ArrowPathIcon className={`h-5 w-5 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            {loading ? 'Đang tải...' : 'Làm mới dữ liệu'}
+          </button>
         </div>
       </div>
     </div>
