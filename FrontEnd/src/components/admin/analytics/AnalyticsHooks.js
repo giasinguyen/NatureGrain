@@ -1,6 +1,24 @@
 import { useState, useCallback, useEffect } from 'react';
 
 /**
+ * Convert timeframe string to appropriate numeric timespan
+ * @param {string} timeframe - 'week', 'month', or 'year'
+ * @returns {number} - Numeric timespan in days
+ */
+const getTimespanFromTimeframe = (timeframe) => {
+  switch (timeframe) {
+    case 'week':
+      return 7;
+    case 'month':
+      return 30;
+    case 'year':
+      return 365;
+    default:
+      return 30;
+  }
+};
+
+/**
  * Custom hook for fetching analytics data
  * @param {string} timeframe - 'week', 'month', or 'year'
  */
@@ -8,7 +26,6 @@ export const useAnalyticsData = (timeframe = 'month') => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
   // Fetch analytics data
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -16,88 +33,54 @@ export const useAnalyticsData = (timeframe = 'month') => {
     try {
       console.log(`Fetching analytics data for timeframe: ${timeframe}`);
       
-      // Use real backend endpoints from analyticsService
-      const { analyticsService } = await import('../../../services/api');
+      // Convert timeframe to numeric timespan for backend APIs
+      const timespan = getTimespanFromTimeframe(timeframe);
+      console.log(`Converted timeframe "${timeframe}" to timespan: ${timespan}`);
+      
+      // Use new advanced analytics service with transformed data
+      const { advancedAnalyticsService } = await import('../../../services/advancedAnalytics');
       
       // Fetch all needed data in parallel for performance
       const [
-        salesTrends, 
-        userGrowth, 
-        productPerformance, 
-        orderStatus, 
-        customerRetention
+        revenueData,
+        customerData,
+        productData,
+        orderData,
+        trafficData
       ] = await Promise.all([
-        import('../../../services/api').then(({ analyticsService }) => 
-          analyticsService.getSalesTrends(timeframe === 'week' ? 'daily' : timeframe === 'month' ? 'weekly' : 'monthly')),
-        import('../../../services/api').then(({ analyticsService }) => 
-          analyticsService.getUserGrowth(timeframe === 'week' ? 7 : timeframe === 'month' ? 30 : 365)),
-        import('../../../services/api').then(({ analyticsService }) => 
-          analyticsService.getProductPerformance()),
-        import('../../../services/api').then(({ analyticsService }) => 
-          analyticsService.getOrderStatusDistribution()),
-        import('../../../services/api').then(({ analyticsService }) =>
-          analyticsService.getCustomerRetention())
+        advancedAnalyticsService.getRevenueAnalytics(timeframe, timespan), // Pass both timeframe and timespan
+        advancedAnalyticsService.getCustomerAnalytics(timespan), // Pass numeric timespan
+        advancedAnalyticsService.getProductAnalytics(5), // Pass default limit of 5
+        advancedAnalyticsService.getOrderAnalytics(timeframe), // Pass timeframe string
+        advancedAnalyticsService.getTrafficAnalytics(timespan) // Pass numeric timespan
       ]);
       
-      console.log('API responses received:', { salesTrends, userGrowth, orderStatus, productPerformance });
+      console.log('API responses received:', { revenueData, customerData, orderData, productData, trafficData });
       
-      // Process and normalize data to handle different API response structures
+      // Data is already transformed by advancedAnalyticsService
       const processedData = {
-        revenue: {
-          current: salesTrends?.totalRevenue || salesTrends?.data?.reduce((sum, item) => sum + (item.sales || item.revenue || 0), 0) || 0,
-          growth: salesTrends?.growthRate || salesTrends?.summary?.growthRate || 0,
-          trend: salesTrends?.trends || salesTrends?.data?.map(item => ({
-            date: item.period || item.date,
-            value: item.sales || item.revenue || 0
-          })) || []
-        },
+        revenue: revenueData,
         users: {
-          current: userGrowth?.totalUsers || userGrowth?.reduce?.((sum, item) => sum + (item.totalUsers || 0), 0) || 0,
-          newUsers: userGrowth?.newUsers || userGrowth?.reduce?.((sum, item) => sum + (item.newUsers || 0), 0) || 0,
-          growth: userGrowth?.growthRate || 0,
-          trend: userGrowth?.trends || userGrowth?.map?.(item => ({
-            date: item.date,
-            value: item.totalUsers || 0
-          })) || []
+          current: customerData.totalCustomers,
+          newUsers: customerData.newCustomers,
+          growth: customerData.growth,
+          trend: customerData.trend
         },
-        orders: {
-          current: orderStatus?.total || orderStatus?.reduce?.((sum, item) => sum + (item.count || 0), 0) || 0,
-          completed: orderStatus?.completed || orderStatus?.find?.(item => item.status === 'COMPLETED')?.count || 0,
-          pending: orderStatus?.pending || orderStatus?.find?.(item => item.status === 'PENDING')?.count || 0,
-          cancelled: orderStatus?.cancelled || orderStatus?.find?.(item => item.status === 'CANCELLED')?.count || 0,
-          growth: orderStatus?.growthRate || 0
-        },
-        products: {
-          topSelling: productPerformance?.topProducts || productPerformance || [],
-          categories: productPerformance?.categories || [],
-          totalViews: productPerformance?.totalViews || 0
-        },
+        orders: orderData,
+        products: productData,
         retention: {
-          rate: customerRetention?.rate || customerRetention?.summary?.customerRetentionRate || 0,
-          trend: customerRetention?.trend || []
+          rate: customerData.retentionRate || 0,
+          trend: customerData.retentionTrend || []
         }
       };
 
       console.log('Processed Data:', processedData);
-      setData(processedData);
-    } catch (err) {
+      setData(processedData);    } catch (err) {
       console.error('Analytics data fetch error:', err);
       setError(err.message);
       
-      // Try fallback with advancedAnalyticsService if primary API fails
-      try {
-        console.log('Trying fallback with advancedAnalyticsService...');
-        const { advancedAnalyticsService } = await import('../../../services/advancedAnalytics');
-        const fallbackData = await advancedAnalyticsService.getDashboardAnalytics(timeframe);
-        console.log('Fallback data:', fallbackData);
-        setData(fallbackData);
-        return;
-      } catch (fallbackErr) {
-        console.error('Fallback analytics service also failed:', fallbackErr);
-      }
-      
-      // Final fallback to mock data
-      console.log('Using final mock data fallback');
+      // Final fallback to mock data for development
+      console.log('Using mock data fallback');
       setData({
         revenue: {
           current: 2450000,
@@ -186,21 +169,17 @@ export const useRealTimeMetrics = (isLiveMode = true) => {
     recentSales: 0,
     conversionRate: 0
   });
-  const [lastUpdate, setLastUpdate] = useState(new Date());
-
-  // Real-time metrics fetching
+  const [lastUpdate, setLastUpdate] = useState(new Date());  // Real-time metrics fetching
   const fetchRealTimeMetrics = useCallback(async () => {
     if (!isLiveMode) return;
     
     try {
-      const { dashboardService } = await import('../../../services/api');
-      const metrics = await dashboardService.getRealtimeMetrics();
-      
+      // Note: Real-time metrics are not available from backend, using mock data
       setRealTimeMetrics({
-        onlineUsers: Math.floor(45 + Math.random() * 25), // Mock as backend doesn't have this
-        activeOrders: metrics.activeOrders || Math.floor(12 + Math.random() * 8),
-        recentSales: metrics.recentSales || Math.floor(150000 + Math.random() * 50000),
-        conversionRate: metrics.conversionRate || (2.5 + Math.random() * 1.5)
+        onlineUsers: Math.floor(45 + Math.random() * 25),
+        activeOrders: Math.floor(12 + Math.random() * 8),
+        recentSales: Math.floor(150000 + Math.random() * 50000),
+        conversionRate: (2.5 + Math.random() * 1.5)
       });
       
       setLastUpdate(new Date());
