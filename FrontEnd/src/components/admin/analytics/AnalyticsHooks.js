@@ -21,8 +21,9 @@ const getTimespanFromTimeframe = (timeframe) => {
 /**
  * Custom hook for fetching analytics data
  * @param {string} timeframe - 'week', 'month', or 'year'
+ * @param {Object} dateRange - { start: string, end: string } - Optional date range
  */
-export const useAnalyticsData = (timeframe = 'month') => {
+export const useAnalyticsData = (timeframe = 'month', dateRange = null) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -31,7 +32,7 @@ export const useAnalyticsData = (timeframe = 'month') => {
     setLoading(true);
     setError(null);
     try {
-      console.log(`Fetching analytics data for timeframe: ${timeframe}`);
+      console.log(`Fetching analytics data for timeframe: ${timeframe}`, dateRange ? `with date range: ${dateRange.start} to ${dateRange.end}` : '');
       
       // Convert timeframe to numeric timespan for backend APIs
       const timespan = getTimespanFromTimeframe(timeframe);
@@ -48,28 +49,27 @@ export const useAnalyticsData = (timeframe = 'month') => {
         orderData,
         trafficData
       ] = await Promise.all([
-        advancedAnalyticsService.getRevenueAnalytics(timeframe, timespan), // Pass both timeframe and timespan
-        advancedAnalyticsService.getCustomerAnalytics(timespan), // Pass numeric timespan
-        advancedAnalyticsService.getProductAnalytics(5), // Pass default limit of 5
-        advancedAnalyticsService.getOrderAnalytics(timeframe), // Pass timeframe string
-        advancedAnalyticsService.getTrafficAnalytics(timespan) // Pass numeric timespan
+        advancedAnalyticsService.getRevenueAnalytics(timeframe, timespan, dateRange), // Pass date range
+        advancedAnalyticsService.getCustomerAnalytics(timespan, dateRange), // Pass date range
+        advancedAnalyticsService.getProductAnalytics(5, dateRange), // Pass date range
+        advancedAnalyticsService.getOrderAnalytics(timeframe, dateRange), // Pass date range
+        advancedAnalyticsService.getTrafficAnalytics(timespan, dateRange) // Pass date range
       ]);
       
-      console.log('API responses received:', { revenueData, customerData, orderData, productData, trafficData });
-      
-      // Data is already transformed by advancedAnalyticsService
+      console.log('API responses received:', { revenueData, customerData, orderData, productData, trafficData });      // Data is already transformed by advancedAnalyticsService
       const processedData = {
         revenue: revenueData,
         users: {
-          current: customerData.totalCustomers,
-          newUsers: customerData.newCustomers,
-          growth: customerData.growth,
-          trend: customerData.trend
+          current: customerData.current || customerData.totalCustomers || 0,
+          newUsers: customerData.newUsers || 0,
+          growth: customerData.growth || 0,
+          trend: customerData.trend || [],
+          retention: customerData.retention || customerData.retentionRate || 0
         },
         orders: orderData,
         products: productData,
         retention: {
-          rate: customerData.retentionRate || 0,
+          rate: customerData.retention || customerData.retentionRate || 0,
           trend: customerData.retentionTrend || []
         }
       };
@@ -78,21 +78,20 @@ export const useAnalyticsData = (timeframe = 'month') => {
       setData(processedData);    } catch (err) {
       console.error('Analytics data fetch error:', err);
       setError(err.message);
-      
-      // Final fallback to mock data for development
+        // Final fallback to mock data for development
       console.log('Using mock data fallback');
       setData({
         revenue: {
-          current: 2450000,
-          growth: 12.5,
+          current: 28825497,
+          growth: 6.1,
           trend: [
-            { date: '2024-01-01', value: 180000 },
-            { date: '2024-01-02', value: 220000 },
-            { date: '2024-01-03', value: 190000 },
-            { date: '2024-01-04', value: 250000 },
-            { date: '2024-01-05', value: 280000 },
-            { date: '2024-01-06', value: 310000 },
-            { date: '2024-01-07', value: 295000 }
+            { date: '2024-01-01', value: 980000 },
+            { date: '2024-01-02', value: 1020000 },
+            { date: '2024-01-03', value: 890000 },
+            { date: '2024-01-04', value: 1150000 },
+            { date: '2024-01-05', value: 1280000 },
+            { date: '2024-01-06', value: 1310000 },
+            { date: '2024-01-07', value: 1095000 }
           ]
         },
         users: {
@@ -110,9 +109,9 @@ export const useAnalyticsData = (timeframe = 'month') => {
           ]
         },
         orders: {
-          current: 89,
-          completed: 67,
-          pending: 15,
+          current: 211,
+          completed: 179,
+          pending: 25,
           cancelled: 7,
           growth: 15.3
         },
@@ -141,9 +140,8 @@ export const useAnalyticsData = (timeframe = 'month') => {
         }
       });
     } finally {
-      setLoading(false);
-    }
-  }, [timeframe]);
+      setLoading(false);    }
+  }, [timeframe, dateRange]);
 
   // Initial data fetch
   useEffect(() => {
@@ -164,34 +162,49 @@ export const useAnalyticsData = (timeframe = 'month') => {
  */
 export const useRealTimeMetrics = (isLiveMode = true) => {
   const [realTimeMetrics, setRealTimeMetrics] = useState({
-    onlineUsers: 0,
-    activeOrders: 0,
-    recentSales: 0,
-    conversionRate: 0
+    todayRevenue: 0,
+    revenueGrowth: 0,
+    newOrdersToday: 0,
+    averageOrderValue: 0,
+    activeSessions: 0,
+    conversionRate: 0,
+    customerSatisfaction: 0,
+    lowStockAlerts: 0,
+    recentActivityCount: 0,
+    peakHours: {
+      currentHour: new Date().getHours(),
+      peakHour: 14,
+      trafficScore: 0
+    },
+    systemMetrics: {
+      responseTime: 0,
+      uptime: 0,
+      errorRate: 0
+    },
+    lastUpdated: new Date()
   });
-  const [lastUpdate, setLastUpdate] = useState(new Date());  // Real-time metrics fetching
+  const [lastUpdate, setLastUpdate] = useState(new Date());
+  // Real-time metrics fetching using advanced analytics service
   const fetchRealTimeMetrics = useCallback(async () => {
     if (!isLiveMode) return;
     
     try {
-      // Note: Real-time metrics are not available from backend, using mock data
-      setRealTimeMetrics({
-        onlineUsers: Math.floor(45 + Math.random() * 25),
-        activeOrders: Math.floor(12 + Math.random() * 8),
-        recentSales: Math.floor(150000 + Math.random() * 50000),
-        conversionRate: (2.5 + Math.random() * 1.5)
-      });
+      // Use the new advanced analytics service
+      const { advancedAnalyticsService } = await import('../../../services/advancedAnalytics');
+      const metrics = await advancedAnalyticsService.getRealTimeMetrics();
       
+      console.log('Fetched real-time metrics:', metrics);
+      setRealTimeMetrics(metrics);
       setLastUpdate(new Date());
     } catch (err) {
       console.error('Real-time metrics fetch error:', err);
-      // Fallback to mock data
-      setRealTimeMetrics({
-        onlineUsers: Math.floor(45 + Math.random() * 25),
-        activeOrders: Math.floor(12 + Math.random() * 8),
-        recentSales: Math.floor(150000 + Math.random() * 50000),
-        conversionRate: (2.5 + Math.random() * 1.5)
-      });
+      
+      // Fallback to mock data with full structure
+      const { advancedAnalyticsService } = await import('../../../services/advancedAnalytics');
+      const mockData = advancedAnalyticsService.getMockAdvancedRealTimeData();
+      
+      console.log('Using mock real-time data:', mockData);
+      setRealTimeMetrics(mockData);
       setLastUpdate(new Date());
     }
   }, [isLiveMode]);

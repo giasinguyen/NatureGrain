@@ -61,18 +61,17 @@ const ProductsTable = ({ products }) => {
                     <span className="font-medium text-gray-900 dark:text-gray-100">
                       {product.name}
                     </span>
-                  </div>
-                </td>
+                  </div>                </td>
                 <td className="py-4 px-4 text-gray-600 dark:text-gray-400">
-                  {product.sales}
+                  {product.units || product.sales || 0}
                 </td>
                 <td className="py-4 px-4 font-medium text-gray-900 dark:text-gray-100">
-                  {formatCurrency(product.revenue)}
+                  {formatCurrency(product.sales || product.revenue || 0)}
                 </td>
                 <td className="py-4 px-4">
                   <div className="flex items-center text-green-600 dark:text-green-400">
                     <ArrowTrendingUpIcon className="h-4 w-4 mr-1" />
-                    <span className="text-sm">+{(Math.random() * 20 + 5).toFixed(1)}%</span>
+                    <span className="text-sm">+{typeof product.growth === 'number' ? product.growth.toFixed(1) : 0}%</span>
                   </div>
                 </td>
               </tr>

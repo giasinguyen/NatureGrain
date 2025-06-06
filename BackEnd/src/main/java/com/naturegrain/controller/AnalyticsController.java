@@ -792,27 +792,35 @@ public class AnalyticsController {
             
             return ResponseEntity.status(500).body(response);
         }
-    }
-
-    // API endpoints mà frontend đang gọi
+    }    // API endpoints mà frontend đang gọi
     @GetMapping("/revenue")
     @Operation(summary = "Lấy dữ liệu doanh thu theo thời gian")
     public ResponseEntity<?> getRevenue(
             @RequestParam(defaultValue = "month") String timeframe,
-            @RequestParam(defaultValue = "30") int timespan) {
+            @RequestParam(defaultValue = "30") int timespan,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
         try {
             List<Order> orders = orderRepository.findAll();
             
-            // Filter orders by timespan
-            LocalDate endDate = LocalDate.now();
-            LocalDate startDate = endDate.minusDays(timespan);
+            // Use date range if provided, otherwise use timespan
+            LocalDate endLocalDate;
+            LocalDate startLocalDate;
+            
+            if (startDate != null && endDate != null) {
+                startLocalDate = LocalDate.parse(startDate);
+                endLocalDate = LocalDate.parse(endDate);
+            } else {
+                endLocalDate = LocalDate.now();
+                startLocalDate = endLocalDate.minusDays(timespan);
+            }
             
             List<Order> filteredOrders = orders.stream()
                     .filter(order -> order.getCreateAt() != null)
                     .filter(order -> {
                         LocalDate orderDate = order.getCreateAt().toInstant()
                                 .atZone(ZoneId.systemDefault()).toLocalDate();
-                        return !orderDate.isBefore(startDate) && !orderDate.isAfter(endDate);
+                        return !orderDate.isBefore(startLocalDate) && !orderDate.isAfter(endLocalDate);
                     })
                     .collect(Collectors.toList());
             
@@ -864,23 +872,33 @@ public class AnalyticsController {
             fallback.put("timespan", timespan);
             return ResponseEntity.ok(fallback);
         }
-    }
-    
-    @GetMapping("/traffic")
+    }    @GetMapping("/traffic")
     @Operation(summary = "Lấy dữ liệu lưu lượng truy cập")
-    public ResponseEntity<?> getTraffic(@RequestParam(defaultValue = "30") int timespan) {
+    public ResponseEntity<?> getTraffic(
+            @RequestParam(defaultValue = "30") int timespan,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
         try {
-            // Since we don't have actual traffic data, we'll use user registration as proxy
-            List<User> users = userRepository.findAll();
+            LocalDate endLocalDate;
+            LocalDate startLocalDate;
             
-            LocalDate endDate = LocalDate.now();
-            LocalDate startDate = endDate.minusDays(timespan);
+            // Use date range if provided, otherwise use timespan
+            if (startDate != null && endDate != null) {
+                startLocalDate = LocalDate.parse(startDate);
+                endLocalDate = LocalDate.parse(endDate);
+            } else {
+                endLocalDate = LocalDate.now();
+                startLocalDate = endLocalDate.minusDays(timespan);
+            }
             
             Map<String, Integer> dailyTraffic = new LinkedHashMap<>();
             
-            // Initialize all days with 0
-            for (int i = 0; i < timespan; i++) {
-                LocalDate date = startDate.plusDays(i);
+            // Calculate the number of days between start and end
+            long daysBetween = ChronoUnit.DAYS.between(startLocalDate, endLocalDate) + 1;
+            
+            // Initialize all days with mock traffic data
+            for (int i = 0; i < daysBetween; i++) {
+                LocalDate date = startLocalDate.plusDays(i);
                 dailyTraffic.put(date.toString(), (int)(Math.random() * 500 + 100)); // Mock data
             }
             
@@ -895,24 +913,45 @@ public class AnalyticsController {
             
             Map<String, Object> result = new HashMap<>();
             result.put("data", data);
-            result.put("timespan", timespan);
+            result.put("timespan", (int) daysBetween);
             result.put("totalVisits", dailyTraffic.values().stream().mapToInt(Integer::intValue).sum());
             
-            return ResponseEntity.ok(result);
-        } catch (Exception e) {
+            // Add date range info if used
+            if (startDate != null && endDate != null) {
+                result.put("dateRange", Map.of("startDate", startDate, "endDate", endDate));
+            }
+            
+            return ResponseEntity.ok(result);        } catch (Exception e) {
             Map<String, Object> fallback = new HashMap<>();
-            fallback.put("data", createMockTrafficData(timespan));
-            fallback.put("timespan", timespan);
+            fallback.put("data", createMockTrafficData((int) (startDate != null && endDate != null ? 
+                ChronoUnit.DAYS.between(LocalDate.parse(startDate), LocalDate.parse(endDate)) + 1 : timespan)));
+            fallback.put("timespan", startDate != null && endDate != null ? 
+                (int) (ChronoUnit.DAYS.between(LocalDate.parse(startDate), LocalDate.parse(endDate)) + 1) : timespan);
             fallback.put("totalVisits", 8500);
             return ResponseEntity.ok(fallback);
         }
     }
-    
-    @GetMapping("/orders")
+      @GetMapping("/orders")
     @Operation(summary = "Lấy thống kê đơn hàng")
-    public ResponseEntity<?> getOrders(@RequestParam(defaultValue = "month") String timeframe) {
+    public ResponseEntity<?> getOrders(
+            @RequestParam(defaultValue = "month") String timeframe,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
         try {
-            List<Order> orders = orderRepository.findAll();
+            List<Order> orders;
+            
+            // Use date range filtering if provided, otherwise get all orders
+            if (startDate != null && endDate != null) {
+                LocalDate startLocalDate = LocalDate.parse(startDate);
+                LocalDate endLocalDate = LocalDate.parse(endDate);
+                
+                Date startDateAsDate = Date.from(startLocalDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+                Date endDateAsDate = Date.from(endLocalDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
+                
+                orders = orderRepository.findByCreateAtBetween(startDateAsDate, endDateAsDate);
+            } else {
+                orders = orderRepository.findAll();
+            }
             
             // Group orders by timeframe
             DateTimeFormatter formatter;
@@ -955,6 +994,11 @@ public class AnalyticsController {
             result.put("totalOrders", orders.size());
             result.put("totalRevenue", orders.stream().mapToLong(Order::getTotalPrice).sum());
             
+            // Add date range info if used
+            if (startDate != null && endDate != null) {
+                result.put("dateRange", Map.of("startDate", startDate, "endDate", endDate));
+            }
+            
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             Map<String, Object> fallback = new HashMap<>();
@@ -965,12 +1009,35 @@ public class AnalyticsController {
             return ResponseEntity.ok(fallback);
         }
     }
-    
-    @GetMapping("/products")
+      @GetMapping("/products")
     @Operation(summary = "Lấy thống kê sản phẩm bán chạy")
-    public ResponseEntity<?> getProducts(@RequestParam(defaultValue = "10") int limit) {
+    public ResponseEntity<?> getProducts(
+            @RequestParam(defaultValue = "10") int limit,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
         try {
-            List<OrderDetail> orderDetails = orderDetailRepository.findAll();
+            List<OrderDetail> orderDetails;
+            
+            // Use date range filtering if provided
+            if (startDate != null && endDate != null) {
+                LocalDate startLocalDate = LocalDate.parse(startDate);
+                LocalDate endLocalDate = LocalDate.parse(endDate);
+                
+                Date startDateAsDate = Date.from(startLocalDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+                Date endDateAsDate = Date.from(endLocalDate.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
+                
+                // Filter order details by date range through order creation date
+                List<Order> ordersInRange = orderRepository.findByCreateAtBetween(startDateAsDate, endDateAsDate);
+                Set<Long> orderIdsInRange = ordersInRange.stream()
+                    .map(Order::getId)
+                    .collect(Collectors.toSet());
+                
+                orderDetails = orderDetailRepository.findAll().stream()
+                    .filter(detail -> detail.getOrder() != null && orderIdsInRange.contains(detail.getOrder().getId()))
+                    .collect(Collectors.toList());
+            } else {
+                orderDetails = orderDetailRepository.findAll();
+            }
             
             // Group by product name and calculate metrics
             Map<String, Map<String, Object>> productStats = new HashMap<>();
@@ -1005,6 +1072,11 @@ public class AnalyticsController {
             result.put("data", topProducts);
             result.put("limit", limit);
             
+            // Add date range info if used
+            if (startDate != null && endDate != null) {
+                result.put("dateRange", Map.of("startDate", startDate, "endDate", endDate));
+            }
+            
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             Map<String, Object> fallback = new HashMap<>();
@@ -1013,24 +1085,35 @@ public class AnalyticsController {
             return ResponseEntity.ok(fallback);
         }
     }
-    
-    @GetMapping("/customers")
+      @GetMapping("/customers")
     @Operation(summary = "Lấy thống kê khách hàng")
-    public ResponseEntity<?> getCustomers(@RequestParam(defaultValue = "30") int timespan) {
+    public ResponseEntity<?> getCustomers(
+            @RequestParam(defaultValue = "30") int timespan,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
         try {
             List<User> users = userRepository.findAll();
             List<Order> orders = orderRepository.findAll();
             
-            LocalDate endDate = LocalDate.now();
-            LocalDate startDate = endDate.minusDays(timespan);
+            // Use date range if provided, otherwise use timespan
+            LocalDate endLocalDate;
+            LocalDate startLocalDate;
             
-            // Filter new customers in timespan
+            if (startDate != null && endDate != null) {
+                startLocalDate = LocalDate.parse(startDate);
+                endLocalDate = LocalDate.parse(endDate);
+            } else {
+                endLocalDate = LocalDate.now();
+                startLocalDate = endLocalDate.minusDays(timespan);
+            }
+            
+            // Filter new customers in date range
             List<User> newCustomers = users.stream()
                     .filter(user -> user.getCreateAt() != null)
                     .filter(user -> {
                         LocalDate userDate = user.getCreateAt().toInstant()
                                 .atZone(ZoneId.systemDefault()).toLocalDate();
-                        return !userDate.isBefore(startDate) && !userDate.isAfter(endDate);
+                        return !userDate.isBefore(startLocalDate) && !userDate.isAfter(endLocalDate);
                     })
                     .collect(Collectors.toList());
             
@@ -1046,11 +1129,10 @@ public class AnalyticsController {
             
             double retentionRate = totalCustomers > 0 ? 
                     (double) repeatCustomers / totalCustomers * 100 : 0;
-            
-            // Daily new customers
+              // Daily new customers
             Map<String, Integer> dailyNewCustomers = new LinkedHashMap<>();
             for (int i = 0; i < timespan; i++) {
-                LocalDate date = startDate.plusDays(i);
+                LocalDate date = startLocalDate.plusDays(i);
                 long count = newCustomers.stream()
                         .filter(user -> {
                             LocalDate userDate = user.getCreateAt().toInstant()
@@ -1147,8 +1229,7 @@ public class AnalyticsController {
         }
         return data;
     }
-    
-    private List<Map<String, Object>> createMockCustomerGrowthData(int timespan) {
+      private List<Map<String, Object>> createMockCustomerGrowthData(int timespan) {
         List<Map<String, Object>> data = new ArrayList<>();
         LocalDate startDate = LocalDate.now().minusDays(timespan);
         
@@ -1159,6 +1240,139 @@ public class AnalyticsController {
             data.add(point);
         }
         return data;
+    }
+
+    @GetMapping("/advanced-realtime")
+    @Operation(summary = "Lấy dữ liệu thời gian thực nâng cao cho dashboard")
+    public ResponseEntity<?> getAdvancedRealTimeMetrics() {
+        try {
+            Map<String, Object> metrics = new HashMap<>();
+            
+            // Calculate today's metrics
+            LocalDate today = LocalDate.now();
+            Date todayStart = Date.from(today.atStartOfDay(ZoneId.systemDefault()).toInstant());
+            Date todayEnd = Date.from(today.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
+            
+            // Today's revenue
+            List<Order> todayOrders = orderRepository.findAll().stream()
+                .filter(order -> order.getCreateAt() != null)
+                .filter(order -> {
+                    Date orderDate = order.getCreateAt();
+                    return !orderDate.before(todayStart) && orderDate.before(todayEnd);
+                })
+                .collect(Collectors.toList());
+            
+            long todayRevenue = todayOrders.stream()
+                .mapToLong(Order::getTotalPrice)
+                .sum();
+            
+            // Yesterday's revenue for comparison
+            Date yesterdayStart = Date.from(today.minusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
+            Date yesterdayEnd = Date.from(today.atStartOfDay(ZoneId.systemDefault()).toInstant());
+            
+            List<Order> yesterdayOrders = orderRepository.findAll().stream()
+                .filter(order -> order.getCreateAt() != null)
+                .filter(order -> {
+                    Date orderDate = order.getCreateAt();
+                    return !orderDate.before(yesterdayStart) && orderDate.before(yesterdayEnd);
+                })
+                .collect(Collectors.toList());
+            
+            long yesterdayRevenue = yesterdayOrders.stream()
+                .mapToLong(Order::getTotalPrice)
+                .sum();
+            
+            // Calculate revenue growth
+            double revenueGrowth = yesterdayRevenue > 0 ? 
+                ((double)(todayRevenue - yesterdayRevenue) / yesterdayRevenue * 100) : 
+                (todayRevenue > 0 ? 100.0 : 0.0);
+            
+            // New orders today
+            int newOrdersToday = todayOrders.size();
+            
+            // Average order value
+            double averageOrderValue = newOrdersToday > 0 ? 
+                (double)todayRevenue / newOrdersToday : 0;
+            
+            // Active sessions (simulated - in real app would come from session tracking)
+            int activeSessions = (int)(Math.random() * 50 + 20);
+            
+            // Conversion rate (orders vs visitors - simulated)
+            double conversionRate = 2.5 + Math.random() * 2.0;
+            
+            // Peak hours analysis
+            Map<String, Object> peakHours = new HashMap<>();
+            peakHours.put("currentHour", LocalDateTime.now().getHour());
+            peakHours.put("peakHour", 14); // 2 PM typically peak
+            peakHours.put("trafficScore", Math.random() * 100);
+            
+            // System performance metrics
+            Map<String, Object> systemMetrics = new HashMap<>();
+            systemMetrics.put("responseTime", 150 + (int)(Math.random() * 100)); // ms
+            systemMetrics.put("uptime", 99.8 + Math.random() * 0.2); // percentage
+            systemMetrics.put("errorRate", Math.random() * 0.5); // percentage
+            
+            // Low stock alerts
+            List<Product> lowStockProducts = productRepository.findAll().stream()
+                .filter(product -> product.getQuantity() < 10)
+                .collect(Collectors.toList());
+            
+            int lowStockCount = lowStockProducts.size();
+            
+            // Customer satisfaction (simulated - would come from reviews/feedback)
+            double customerSatisfaction = 4.2 + Math.random() * 0.6;
+            
+            // Recent activity count
+            int recentActivityCount = (int)(Math.random() * 20 + 10);
+            
+            // Build response
+            metrics.put("todayRevenue", todayRevenue);
+            metrics.put("revenueGrowth", Math.round(revenueGrowth * 10.0) / 10.0);
+            metrics.put("newOrdersToday", newOrdersToday);
+            metrics.put("averageOrderValue", Math.round(averageOrderValue));
+            metrics.put("activeSessions", activeSessions);
+            metrics.put("conversionRate", Math.round(conversionRate * 10.0) / 10.0);
+            metrics.put("customerSatisfaction", Math.round(customerSatisfaction * 10.0) / 10.0);
+            metrics.put("lowStockAlerts", lowStockCount);
+            metrics.put("recentActivityCount", recentActivityCount);
+            metrics.put("peakHours", peakHours);
+            metrics.put("systemMetrics", systemMetrics);
+            metrics.put("lastUpdated", new Date());
+            
+            return ResponseEntity.ok(metrics);
+            
+        } catch (Exception e) {
+            System.err.println("Error in getAdvancedRealTimeMetrics: " + e.getMessage());
+            e.printStackTrace();
+            
+            // Fallback data
+            Map<String, Object> fallbackMetrics = new HashMap<>();
+            fallbackMetrics.put("todayRevenue", 2800000L + (long)(Math.random() * 1200000));
+            fallbackMetrics.put("revenueGrowth", 8.5 + Math.random() * 6);
+            fallbackMetrics.put("newOrdersToday", 25 + (int)(Math.random() * 15));
+            fallbackMetrics.put("averageOrderValue", 185000L + (long)(Math.random() * 95000));
+            fallbackMetrics.put("activeSessions", 20 + (int)(Math.random() * 30));
+            fallbackMetrics.put("conversionRate", 2.5 + Math.random() * 2.0);
+            fallbackMetrics.put("customerSatisfaction", 4.2 + Math.random() * 0.6);
+            fallbackMetrics.put("lowStockAlerts", 2 + (int)(Math.random() * 4));
+            fallbackMetrics.put("recentActivityCount", 10 + (int)(Math.random() * 20));
+            
+            Map<String, Object> peakHours = new HashMap<>();
+            peakHours.put("currentHour", LocalDateTime.now().getHour());
+            peakHours.put("peakHour", 14);
+            peakHours.put("trafficScore", Math.random() * 100);
+            fallbackMetrics.put("peakHours", peakHours);
+            
+            Map<String, Object> systemMetrics = new HashMap<>();
+            systemMetrics.put("responseTime", 150 + (int)(Math.random() * 100));
+            systemMetrics.put("uptime", 99.8 + Math.random() * 0.2);
+            systemMetrics.put("errorRate", Math.random() * 0.5);
+            fallbackMetrics.put("systemMetrics", systemMetrics);
+            
+            fallbackMetrics.put("lastUpdated", new Date());
+            
+            return ResponseEntity.ok(fallbackMetrics);
+        }
     }
 
 }
