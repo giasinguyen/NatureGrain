@@ -57,16 +57,16 @@ const ProductsTable = ({ products }) => {
                       <span className="text-green-600 dark:text-green-400 font-semibold">
                         {index + 1}
                       </span>
-                    </div>
-                    <span className="font-medium text-gray-900 dark:text-gray-100">
+                    </div>                    <span className="font-medium text-gray-900 dark:text-gray-100">
                       {product.name}
                     </span>
-                  </div>                </td>
+                  </div>
+                </td>
                 <td className="py-4 px-4 text-gray-600 dark:text-gray-400">
-                  {product.units || product.sales || 0}
+                  {product.sales || product.units || 0}
                 </td>
                 <td className="py-4 px-4 font-medium text-gray-900 dark:text-gray-100">
-                  {formatCurrency(product.sales || product.revenue || 0)}
+                  {formatCurrency(product.revenue || 0)}
                 </td>
                 <td className="py-4 px-4">
                   <div className="flex items-center text-green-600 dark:text-green-400">
