@@ -22,6 +22,7 @@ const ProductCard = ({
   const [imageError, setImageError] = useState(false);
 
   if (!product) return null;
+
   const {
     id,
     name,
@@ -31,30 +32,22 @@ const ProductCard = ({
     quantity = 0,
     discount = 0,
     rating = 4.5,
-    images = []
+    image
   } = product;
 
   const inStock = quantity > 0;
   const categoryName = category?.name || 'Sản phẩm';
   const hasDiscount = discount > 0 && discountPrice;
-  const finalPrice = hasDiscount ? discountPrice : price;  // Get image URL using Cloudinary integration
+  const finalPrice = hasDiscount ? discountPrice : price;
+
+  // Get image URL using Cloudinary integration
   const getProductImageUrl = () => {
-    console.log('ProductCard - Getting image URL for product:', product.name, 'Images data:', images);
-    
-    // Get the first image from the images array
-    const firstImage = images && images.length > 0 ? images[0] : null;
-    
-    if (firstImage?.id) {
-      const imageUrl = getImageUrl({ id: firstImage.id });
-      console.log('ProductCard - Generated URL from ID:', imageUrl);
-      return imageUrl;
+    if (image?.id) {
+      return getImageUrl({ id: image.id });
     }
-    if (firstImage?.url) {
-      const imageUrl = getImageUrl({ url: firstImage.url });
-      console.log('ProductCard - Generated URL from URL:', imageUrl);
-      return imageUrl;
+    if (image?.url) {
+      return getImageUrl({ url: image.url });
     }
-    console.log('ProductCard - Using fallback image');
     return '/dummy.png'; // fallback image
   };
 
