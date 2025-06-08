@@ -481,27 +481,34 @@ const HomePage = () => {
                   to={`/blog/${blog.id}`}
                   className="group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2"
                   style={{ animationDelay: `${index * 150}ms` }}
-                >
-                  <div className="aspect-[16/9] overflow-hidden relative">
-                    <img 
-                      src={blog.image || '/blog-placeholder.jpg'} 
-                      alt={blog.title}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    />
+                >                  <div className="aspect-[16/9] overflow-hidden relative">
+                    {blog.image && blog.image.url ? (
+                      <img 
+                        src={blog.image.url} 
+                        alt={blog.title}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        onError={(e) => {
+                          e.target.src = '/blog-placeholder.jpg';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                        <span className="text-gray-400">Không có hình ảnh</span>
+                      </div>
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   </div>
                   
                   <div className="p-6">
                     <div className="flex items-center text-sm text-gray-500 mb-3">
-                      <time>{new Date(blog.createdDate).toLocaleDateString('vi-VN')}</time>
+                      <time>{new Date(blog.createAt).toLocaleDateString('vi-VN')}</time>
                       <span className="mx-2">•</span>
                       <span>5 phút đọc</span>
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-800 mb-3 line-clamp-2 group-hover:text-green-600 transition-colors">
+                    </div>                    <h3 className="text-xl font-bold text-gray-800 mb-3 line-clamp-2 group-hover:text-green-600 transition-colors">
                       {blog.title}
                     </h3>
                     <p className="text-gray-600 line-clamp-3 leading-relaxed">
-                      {blog.summary || blog.content.substring(0, 120) + '...'}
+                      {blog.description || blog.summary || (blog.content ? blog.content.substring(0, 120) + '...' : 'Không có mô tả')}
                     </p>
                     <div className="flex items-center text-green-600 font-medium mt-4 group-hover:text-green-700">
                       Đọc thêm
@@ -553,10 +560,10 @@ const HomePage = () => {
               </blockquote>
               <div className="flex items-center">
                 <div className="w-12 h-12 rounded-full overflow-hidden mr-4 ring-4 ring-green-100">
-                  <img src="/testimonial-1.jpg" alt="Avatar" className="w-full h-full object-cover" />
+                  <img src="/logo.png" alt="Avatar" className="w-full h-full object-cover" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-gray-900">Nguyễn Thị Mai</h4>
+                  <h4 className="font-bold text-gray-900">Nguyễn Trần Gia Sĩ</h4>
                   <p className="text-sm text-gray-500">Khách hàng thân thiết</p>
                 </div>
               </div>
@@ -574,12 +581,12 @@ const HomePage = () => {
                 NatureGrain đã đáp ứng được yêu cầu của tôi với chất lượng sản phẩm tuyệt vời và giá cả hợp lý."
               </blockquote>
               <div className="flex items-center">
-                <div className="w-12 h-12 rounded-full overflow-hidden mr-4 ring-4 ring-blue-100">
-                  <img src="/testimonial-2.jpg" alt="Avatar" className="w-full h-full object-cover" />
+                <div className="w-12 h-12 rounded-full overflow-hidden mr-4 ring-4 ring-green-100">
+                  <img src="/logo.png" alt="Avatar" className="w-full h-full object-cover" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-gray-900">Trần Văn Minh</h4>
-                  <p className="text-sm text-gray-500">Khách hàng VIP</p>
+                  <h4 className="font-bold text-gray-900">Nguyễn Trần Gia Sĩ</h4>
+                  <p className="text-sm text-gray-500">Khách hàng thân thiết</p>
                 </div>
               </div>
             </div>
@@ -597,12 +604,12 @@ const HomePage = () => {
                 với môi trường. Hơn nữa, các sản phẩm organic của họ có hương vị tự nhiên và rất ngon."
               </blockquote>
               <div className="flex items-center">
-                <div className="w-12 h-12 rounded-full overflow-hidden mr-4 ring-4 ring-purple-100">
-                  <img src="/testimonial-3.jpg" alt="Avatar" className="w-full h-full object-cover" />
+                <div className="w-12 h-12 rounded-full overflow-hidden mr-4 ring-4 ring-green-100">
+                  <img src="/logo.png" alt="Avatar" className="w-full h-full object-cover" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-gray-900">Lê Thị Hương</h4>
-                  <p className="text-sm text-gray-500">Khách hàng mới</p>
+                  <h4 className="font-bold text-gray-900">Nguyễn Trần Gia Sĩ</h4>
+                  <p className="text-sm text-gray-500">Khách hàng thân thiết</p>
                 </div>
               </div>
             </div>

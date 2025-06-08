@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { contactService } from "../services/api";
 import { toast } from "react-toastify";
 import {
@@ -17,37 +17,35 @@ const ContactPage = () => {
     subject: "",
     message: "",
   });
-
-  // Contact info state
-  const [contactInfo, setContactInfo] = useState({
+  // Contact info state (using static data since API endpoint doesn't exist)
+  const [contactInfo] = useState({
     address: "12 Nguyễn Văn Bảo, Phường 1, Quận Gò Vấp, TP.HCM",
     phone: "(+84) 348 996 487",
     email: "giasinguyentran@gmail.com",
     openingHours: "Thứ 2 - Chủ nhật: 8:00 - 20:00",
   });
-
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading] = useState(false); // Set to false since we're not fetching from API
 
-  // Fetch contact information from backend
-  useEffect(() => {
-    const fetchContactInfo = async () => {
-      try {
-        const response = await contactService.getContactInfo();
-        if (response.data) {
-          setContactInfo(response.data);
-        }
-      } catch (error) {
-        console.error("Error fetching contact info:", error);
-        // Keep default contact info if API fails
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Remove API call since the endpoint doesn't exist
+  // useEffect(() => {
+  //   const fetchContactInfo = async () => {
+  //     try {
+  //       const response = await contactService.getContactInfo();
+  //       if (response.data) {
+  //         setContactInfo(response.data);
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching contact info:", error);
+  //       // Keep default contact info if API fails
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
 
-    fetchContactInfo();
-  }, []);
+  //   fetchContactInfo();
+  // }, []);
 
   // Handle input changes
   const handleChange = (e) => {
@@ -184,18 +182,26 @@ const ContactPage = () => {
         {/* Map and contact form */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-12">
           {/* Map (3 cols) */}
-          <div className="lg:col-span-3 bg-white p-4 rounded-lg shadow-sm">
-            <div className="aspect-video w-full h-full">
-              <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3918.8591549309895!2d106.68432337677152!3d10.822088758346256!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x317528e52e40dca1%3A0x68dae46674ef27ff!2zMTIgTmd1eeG7hW4gVsSDbiBC4bqjbywgUGjGsOG7nW5nIDEsIEfDsiBW4bqlcCwgSOG7kyBDaMOtIE1pbmggNzAwMDAwLCBWaeG7h3QgTmFt!5e0!3m2!1svi!2s!4v1746277058567!5m2!1svi!2s"
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                allowFullScreen=""
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                title="NatureGrain location"
-              ></iframe>
+          <div className="lg:col-span-3 bg-white p-4 rounded-lg shadow-sm">            <div className="aspect-video w-full h-full">              {/* Simple map replacement to avoid Google Maps API errors */}
+              <div className="w-full h-full bg-gray-100 rounded-lg flex items-center justify-center text-gray-600">
+                <div className="text-center">
+                  <MapPinIcon className="h-16 w-16 mx-auto mb-4 text-green-600" />
+                  <p className="font-medium text-lg mb-2">NatureGrain Store</p>
+                  <p className="text-sm text-gray-700">12 Nguyễn Văn Bảo, Phường 1</p>
+                  <p className="text-sm text-gray-700">Quận Gò Vấp, TP.HCM</p>
+                  <div className="mt-4">
+                    <a 
+                      href="https://maps.google.com/?q=12+Nguyen+Van+Bao,+Go+Vap,+Ho+Chi+Minh+City,+Vietnam"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm"
+                    >
+                      <MapPinIcon className="h-4 w-4 mr-2" />
+                      Xem trên Google Maps
+                    </a>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 

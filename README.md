@@ -11,274 +11,595 @@
   <a href="https://mariadb.org/"><img src="https://img.shields.io/badge/Database-MariaDB-003545?style=for-the-badge&logo=mariadb" alt="MariaDB"/></a>
   <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Deployment-Docker-2496ED?style=for-the-badge&logo=docker" alt="Docker"/></a>
   <a href="https://vitejs.dev/"><img src="https://img.shields.io/badge/Build-Vite-646CFF?style=for-the-badge&logo=vite" alt="Vite"/></a>
+  <a href="https://cloudinary.com/"><img src="https://img.shields.io/badge/Images-Cloudinary-3448C5?style=for-the-badge&logo=cloudinary" alt="Cloudinary"/></a>
 </p>
 
-## 📝 Giới thiệu
+## 📸 Application Preview
 
-**NatureGrain** là nền tảng thương mại điện tử chuyên về thực phẩm hữu cơ, được phát triển với mục tiêu mang đến trải nghiệm mua sắm trực tuyến an toàn, tiện lợi và đáng tin cậy. Dự án tập trung vào việc kết nối người tiêu dùng với các sản phẩm thực phẩm chất lượng cao, được sản xuất theo phương pháp hữu cơ, thân thiện với môi trường.
+<div align="center">
+  <h3>🏠 Homepage - Customer Experience</h3>
+  <img src="FrontEnd/public/home-page.PNG" alt="NatureGrain Homepage" width="900"/>
+  
+  <h3>📊 Admin Dashboard - Management Interface</h3>
+  <img src="FrontEnd/public/dashboard.PNG" alt="NatureGrain Admin Dashboard" width="900"/>
+</div>
+
+## 📝 Project Overview
+
+**NatureGrain** is a comprehensive full-stack e-commerce platform specifically designed for organic food retail. This modern web application provides a seamless shopping experience for customers seeking premium organic products while offering powerful administrative tools for business management.
+
+The platform combines cutting-edge web technologies with industry best practices to deliver a scalable, secure, and user-friendly solution that bridges the gap between organic food producers and conscious consumers.
+
+### 🎯 Project Goals
+
+- **Customer Focus**: Create an intuitive, fast, and reliable shopping experience
+- **Business Efficiency**: Provide comprehensive tools for inventory, order, and customer management  
+- **Scalability**: Build a robust architecture that can grow with business needs
+- **Security**: Implement enterprise-grade security measures for data protection
+- **Performance**: Ensure optimal loading times and responsive design across all devices
+- **Sustainability**: Promote organic farming and sustainable food consumption
 
 <details open>
-<summary><h3>🌱 Cam kết của NatureGrain</h3></summary>
+<summary><h3>🌟 Key Features & Capabilities</h3></summary>
 
-- **Chất lượng cao**: Chỉ cung cấp sản phẩm đạt tiêu chuẩn hữu cơ nghiêm ngặt
-- **Minh bạch**: Thông tin đầy đủ về nguồn gốc và quy trình sản xuất
-- **Bền vững**: Ưu tiên các phương pháp sản xuất và đóng gói thân thiện với môi trường
-- **Trải nghiệm người dùng**: Giao diện thân thiện, dễ sử dụng trên mọi thiết bị
+#### 🛒 Customer Experience
+- **Modern Product Catalog**: Responsive product grid with advanced filtering and search
+- **Smart Shopping Cart**: Real-time cart updates, quantity management, and price calculations
+- **Secure Checkout**: Multi-step checkout process with guest and registered user options
+- **User Accounts**: Profile management, order history, wishlist, and address book
+- **Product Discovery**: Categories, featured products, recommendations, and related items
+- **Content Management**: Rich blog content with recipes, nutrition tips, and organic farming insights
+- **Responsive Design**: Optimized for desktop, tablet, and mobile devices
+
+#### 📊 Admin Dashboard
+- **Real-time Analytics**: Sales metrics, customer insights, and performance dashboards
+- **Product Management**: CRUD operations, inventory tracking, category management
+- **Order Processing**: Order status updates, fulfillment tracking, and customer communications
+- **Customer Management**: User profiles, purchase history, and support ticket handling
+- **Content Administration**: Blog post management, homepage content, and promotional banners
+- **Image Management**: Cloudinary integration for optimized image upload and delivery
+
+#### 🔧 Technical Excellence
+- **Modern Architecture**: Microservices-inspired design with clear separation of concerns
+- **API-First Approach**: RESTful APIs with comprehensive documentation and testing
+- **Cloud Integration**: Cloudinary for image management and CDN delivery
+- **Security Implementation**: JWT authentication, role-based access control, input validation
+- **Performance Optimization**: Code splitting, lazy loading, caching strategies
+- **DevOps Ready**: Docker containerization, environment configuration, and deployment automation
 </details>
 
 <details open>
-<summary><h3>🌟 Tính năng chính</h3></summary>
+<summary><h3>🚀 Technical Highlights</h3></summary>
 
-#### Cho người dùng cuối:
-- **Danh mục sản phẩm đa dạng**: Rau củ tươi, trái cây, ngũ cốc, hạt, thực phẩm khô và nhiều mặt hàng khác
-- **Hệ thống tài khoản**: Đăng ký, đăng nhập, quản lý thông tin cá nhân và theo dõi lịch sử mua hàng
-- **Giỏ hàng thông minh**: Thêm sản phẩm, cập nhật số lượng, áp dụng mã giảm giá, dự tính phí vận chuyển
-- **Quy trình thanh toán**: Nhiều phương thức thanh toán, lưu địa chỉ giao hàng cho lần sau
-- **Tìm kiếm và lọc nâng cao**: Tìm kiếm theo từ khóa, lọc theo danh mục, giá cả, đánh giá, và thuộc tính khác
-- **Blog dinh dưỡng**: Bài viết về lối sống lành mạnh, công thức nấu ăn và thông tin hữu ích
-- **Đánh giá sản phẩm**: Cho phép người dùng đánh giá và xem đánh giá từ người khác
+#### Frontend Architecture
+- **React 19** with modern hooks and functional components
+- **Vite** for lightning-fast development and optimized production builds
+- **TailwindCSS** for utility-first styling and responsive design
+- **Context API** for state management across components
+- **React Router v7** for client-side routing and navigation
+- **Axios** with interceptors for API communication and error handling
 
-#### Cho quản trị viên:
-- **Dashboard quản trị**: Giao diện quản lý toàn diện cho admin
-- **Quản lý sản phẩm**: Thêm, sửa, xóa sản phẩm và quản lý kho hàng
-- **Quản lý đơn hàng**: Xử lý đơn hàng, cập nhật trạng thái, in hóa đơn
-- **Phân tích dữ liệu**: Thống kê bán hàng, phân tích xu hướng, báo cáo doanh thu
-- **Quản lý người dùng**: Xem thông tin khách hàng, phân quyền người dùng
-- **Quản lý nội dung**: Cập nhật blog, banner quảng cáo và thông tin website
+#### Backend Architecture  
+- **Spring Boot 2.7** with auto-configuration and embedded server
+- **Spring Security** with JWT authentication and role-based authorization
+- **Spring Data JPA** with Hibernate for database abstraction
+- **MariaDB** as the primary relational database
+- **Cloudinary SDK** for image upload, storage, and transformation
+- **Swagger/OpenAPI** for comprehensive API documentation
+
+#### DevOps & Deployment
+- **Docker** containerization for consistent deployment environments
+- **Docker Compose** for multi-container orchestration
+- **Environment Configuration** with separate configs for dev/staging/production
+- **Health Checks** and monitoring for application reliability
+- **Volume Mounts** for persistent data storage
 </details>
 
-## 🚀 Công nghệ sử dụng
+## 🚀 Technology Stack & Architecture
 
 <details open>
-<summary><h3>💻 Frontend</h3></summary>
+<summary><h3>💻 Frontend Technologies</h3></summary>
 
-- **React 19**: Framework JavaScript hiện đại với Hooks, Suspense, và Server Components
-- **Vite 5**: Hệ thống build siêu nhanh với Hot Module Replacement và optimized bundling
-- **React Router v7**: Điều hướng trong ứng dụng với Data APIs, Loaders và nested routes
-- **TailwindCSS 3**: Framework CSS utility-first với JIT compiler và custom theming
-- **Context API & Custom Hooks**: Quản lý state với pattern đơn giản và hiệu quả
-- **Axios**: Client HTTP với interceptors, request cancellation và error handling
-- **JWT Authentication**: Xác thực và phân quyền theo chuẩn JSON Web Token
-- **React Toastify**: Hiển thị thông báo cho người dùng một cách trực quan
-- **React Icons & Heroicons**: Thư viện icon phong phú và dễ sử dụng
-- **Formik & Yup**: Xử lý form và validation dữ liệu
-- **Lazy loading & Code splitting**: Tối ưu thời gian tải trang
-- **Progressive loading**: Tải hình ảnh theo chất lượng tăng dần
-</details>
+| Technology | Version | Purpose | Benefits |
+|------------|---------|---------|----------|
+| **React** | 19.x | UI Framework | Modern hooks, concurrent features, component reusability |
+| **Vite** | 5.x | Build Tool | Lightning-fast HMR, optimized bundling, ES modules |
+| **React Router** | v7 | Client Routing | Data APIs, loaders, nested routes, code splitting |
+| **TailwindCSS** | 3.x | CSS Framework | Utility-first, JIT compilation, responsive design |
+| **Axios** | Latest | HTTP Client | Request/response interceptors, error handling, cancellation |
+| **Heroicons** | 2.x | Icon Library | Consistent iconography, SVG-based, lightweight |
+| **React Context** | Built-in | State Management | Global state without external dependencies |
+| **JWT Decode** | Latest | Authentication | Token parsing and validation on client-side |
 
-<details open>
-<summary><h3>🛠️ Backend</h3></summary>
-
-- **Spring Boot 2.7**: Framework Java enterprise với auto-configuration và embedded server
-- **Spring Security**: Hệ thống xác thực và phân quyền mạnh mẽ với JWT
-- **Spring Data JPA**: Tự động tạo repository với các phương thức truy vấn
-- **Hibernate ORM**: Object-Relational Mapping cho tương tác cơ sở dữ liệu
-- **MariaDB**: Hệ quản trị cơ sở dữ liệu quan hệ mã nguồn mở
-- **Cloudinary Integration**: Lưu trữ và quản lý hình ảnh trên cloud
-- **Dotenv**: Quản lý biến môi trường an toàn với file .env
-- **Swagger/OpenAPI**: Tự động tạo tài liệu API với UI tương tác
-- **Lombok**: Giảm code boilerplate với annotation processors
-- **Multipart File Upload**: Hỗ trợ tải lên nhiều file cùng lúc
-- **Exception Handling**: Xử lý ngoại lệ toàn cục với RestControllerAdvice
-- **Bean Validation**: Kiểm tra dữ liệu tự động với javax.validation
+#### Frontend Architecture Patterns
+- **Component-Driven Development**: Reusable, testable UI components
+- **Custom Hooks**: Business logic separation and reusability  
+- **Context + Reducer**: Scalable state management for complex states
+- **Error Boundaries**: Graceful error handling and fallback UI
+- **Lazy Loading**: Code splitting for optimal bundle size
+- **Progressive Enhancement**: Works with and without JavaScript
 </details>
 
 <details open>
-<summary><h3>🔄 DevOps & CI/CD</h3></summary>
+<summary><h3>🛠️ Backend Technologies</h3></summary>
 
-- **Docker**: Container hóa ứng dụng cho triển khai nhất quán
-- **Docker Compose**: Định nghĩa và chạy multi-container với một command
-- **Nginx**: Web server và reverse proxy với cấu hình tối ưu
-- **Multi-stage builds**: Giảm kích thước image Docker
-- **Health checks**: Giám sát trạng thái ứng dụng
-- **Volume mounts**: Lưu trữ dữ liệu bền vững ngoài container
-- **Environment variables**: Cấu hình linh hoạt giữa các môi trường
+| Technology | Version | Purpose | Benefits |
+|------------|---------|---------|----------|
+| **Spring Boot** | 2.7.x | Framework | Auto-configuration, embedded server, production-ready |
+| **Spring Security** | 5.7.x | Security | JWT auth, CORS, CSRF protection, method security |
+| **Spring Data JPA** | 2.7.x | Data Access | Repository pattern, query generation, transaction management |
+| **Hibernate** | 5.6.x | ORM | Object-relational mapping, caching, lazy loading |
+| **MariaDB** | 10.6+ | Database | ACID compliance, performance, MySQL compatibility |
+| **Cloudinary** | Java SDK | Media Management | Image optimization, transformation, CDN delivery |
+| **JWT (JJWT)** | 0.11.x | Authentication | Stateless auth, secure token generation |
+| **Lombok** | 1.18.x | Code Generation | Reduced boilerplate, cleaner code |
+| **Swagger** | 3.x | API Documentation | Interactive API docs, testing interface |
+| **Dotenv** | 2.3.x | Configuration | Environment variable management |
+
+#### Backend Architecture Patterns
+- **RESTful API Design**: Resource-based URLs, HTTP methods, status codes
+- **Layered Architecture**: Controller → Service → Repository → Entity
+- **Dependency Injection**: Loose coupling, testability, configuration management
+- **Exception Handling**: Global exception handlers, custom error responses
+- **Validation**: Bean validation with custom validators
+- **Security**: JWT-based stateless authentication with role-based access
+</details>
+
+<details open>
+<summary><h3>🔄 DevOps & Infrastructure</h3></summary>
+
+| Technology | Purpose | Configuration |
+|------------|---------|---------------|
+| **Docker** | Containerization | Multi-stage builds, optimized images |
+| **Docker Compose** | Orchestration | Multi-container development environment |
+| **Nginx** | Reverse Proxy | Load balancing, static file serving |
+| **MariaDB** | Database | Persistent volumes, initialization scripts |
+| **Cloudinary** | CDN/Storage | Image optimization, global delivery |
+
+#### Infrastructure Features
+- **Container Health Checks**: Automatic restart on failure
+- **Volume Persistence**: Data survival across container restarts  
+- **Environment Separation**: Dev/staging/production configurations
+- **Resource Optimization**: Memory and CPU limits for containers
+- **Network Isolation**: Secure inter-container communication
 </details>
 
 <details>
-<summary><h3>📊 Phân tích và Báo cáo</h3></summary>
+<summary><h3>📊 Development Tools & Quality Assurance</h3></summary>
 
-- **Dashboard Interactivity**: Biểu đồ và báo cáo tương tác với Chart.js
-- **Analytics Data Models**: Cấu trúc dữ liệu tối ưu cho phân tích
-- **Custom Metrics**: Theo dõi KPIs quan trọng cho kinh doanh
-- **Advanced Filters**: Lọc dữ liệu nâng cao và cross-dimensional
-- **Export Reports**: Xuất dữ liệu dưới dạng CSV, Excel, hoặc PDF
+#### Development Environment
+- **Node.js 18+**: JavaScript runtime for frontend development
+- **JDK 17+**: Java development kit for backend services
+- **Maven 3.8+**: Dependency management and build automation
+- **Git**: Version control with conventional commit messages
+- **VS Code**: Recommended IDE with extensions for React and Java
+
+#### Code Quality & Testing
+- **ESLint**: JavaScript/React code linting and formatting
+- **Prettier**: Code formatting and style consistency  
+- **Husky**: Git hooks for pre-commit quality checks
+- **JUnit 5**: Unit testing framework for Java backend
+- **Jest**: JavaScript testing framework for frontend
+- **Postman**: API testing and documentation
+
+#### Performance Monitoring
+- **React DevTools**: Component debugging and performance profiling
+- **Chrome DevTools**: Network analysis, performance auditing
+- **Spring Boot Actuator**: Application metrics and health endpoints
+- **Database Profiling**: Query optimization and performance tuning
 </details>
 
-## 🛠️ Cài đặt và chạy dự án
+## 🛠️ Installation & Setup Guide
 
 <details open>
-<summary><h3>🐳 Phương pháp 1: Sử dụng Docker (Khuyến nghị)</h3></summary>
+<summary><h3>🐳 Method 1: Docker Deployment (Recommended)</h3></summary>
 
-Cách đơn giản nhất để chạy toàn bộ hệ thống là sử dụng Docker Compose:
+The fastest way to run the complete NatureGrain system is using Docker Compose. This method automatically sets up all services with proper networking and volume configuration.
 
+#### Prerequisites
+- **Docker**: Version 20.0+ with Docker Compose
+- **Git**: For cloning the repository
+- **8GB RAM**: Recommended for optimal performance
+
+#### Quick Start
 ```bash
-# Clone dự án
+# Clone the repository
 git clone https://github.com/giasinguyen/NatureGrain.git
 cd NatureGrain
 
-# Chạy với Docker Compose
+# Copy environment template (optional customization)
+cp .env.example .env
+
+# Start all services in detached mode
 docker-compose up -d
+
+# View container logs (optional)
+docker-compose logs -f
 ```
 
-Sau khi khởi chạy thành công, truy cập:
-- **Frontend**: [http://localhost](http://localhost)
-- **Backend API**: [http://localhost:8080/api](http://localhost:8080/api)
-- **Swagger UI**: [http://localhost:8080/api/swagger-ui.html](http://localhost:8080/api/swagger-ui.html)
+#### Service Access Points
+After successful startup, access the application at:
 
-Để dừng và xóa các containers:
+| Service | URL | Description |
+|---------|-----|-------------|
+| **Frontend** | [http://localhost](http://localhost) | Customer-facing website |
+| **Backend API** | [http://localhost:8080/api](http://localhost:8080/api) | REST API endpoints |
+| **API Documentation** | [http://localhost:8080/api/swagger-ui.html](http://localhost:8080/api/swagger-ui.html) | Interactive API docs |
+| **Database** | `localhost:3306` | MariaDB (internal access) |
+
+#### Docker Management Commands
 ```bash
+# Stop all services
 docker-compose down
-```
 
-Để dừng và xóa các containers kèm theo volumes (xóa cả dữ liệu):
-```bash
+# Stop and remove all data (complete reset)
 docker-compose down -v
+
+# View service status
+docker-compose ps
+
+# Access logs for specific service
+docker-compose logs [frontend|backend|database]
+
+# Rebuild services after code changes
+docker-compose up --build
 ```
 
-Xem thêm hướng dẫn chi tiết triển khai trong [DEPLOYMENT.md](DEPLOYMENT.md).
+#### Production Deployment
+For production environments, see detailed deployment guide in [DEPLOYMENT.md](DEPLOYMENT.md).
 </details>
 
 <details>
-<summary><h3>💻 Phương pháp 2: Cài đặt thủ công</h3></summary>
+<summary><h3>💻 Method 2: Manual Development Setup</h3></summary>
 
-#### Yêu cầu hệ thống
-- **Node.js**: >= 18.x (khuyên dùng bản LTS mới nhất)
-- **Java Development Kit (JDK)**: 17 hoặc mới hơn
-- **MariaDB**: 10.6 hoặc mới hơn
-- **Maven**: 3.8+ để build backend
+For development and customization, you can run the services manually with full control over the environment.
 
-#### Biến môi trường
-Tạo các file .env cho cấu hình:
-- `.env` cho backend (thư mục `BackEnd`)
-- `.env.development` cho môi trường development frontend (thư mục `FrontEnd`)
-- `.env.production` cho môi trường production frontend (thư mục `FrontEnd`)
+#### System Requirements
+| Component | Minimum Version | Recommended |
+|-----------|----------------|-------------|
+| **Node.js** | 18.0+ | Latest LTS (20.x) |
+| **Java JDK** | 17+ | JDK 17 or 21 |
+| **MariaDB** | 10.6+ | Latest stable |
+| **Maven** | 3.8+ | Latest version |
+| **RAM** | 4GB | 8GB+ |
+| **Storage** | 5GB | 10GB+ |
 
-#### Cài đặt Backend
-1. **Clone dự án**:
-   ```bash
-   git clone https://github.com/giasinguyen/NatureGrain.git
-   cd NatureGrain/BackEnd
-   ```
+#### Environment Configuration
 
-2. **Cấu hình cơ sở dữ liệu**:
-   ```bash
-   # Tạo database MariaDB
-   mysql -u root -p -e "CREATE DATABASE naturegrain CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
-   
-   # Cấu hình kết nối trong file .env
-   echo "DATABASE_URL=jdbc:mysql://localhost:3306/naturegrain
-   DATABASE_USERNAME=root
-   DATABASE_PASSWORD=your_password
-   CLOUDINARY_CLOUD_NAME=your_cloud_name
-   CLOUDINARY_API_KEY=your_api_key  
-   CLOUDINARY_API_SECRET=your_api_secret
-   CLOUDINARY_FOLDER=naturegrain_products
-   JWT_SECRET=your_jwt_secret" > .env
-   ```
+Create the required environment files:
 
-3. **Khởi tạo dữ liệu**:
-   ```bash
-   mysql -u root -p naturegrain < naturegrain.sql
-   ```
+**Backend (.env in `BackEnd/` directory):**
+```env
+# Database Configuration
+DATABASE_URL=jdbc:mysql://localhost:3306/naturegrain?useSSL=false&allowPublicKeyRetrieval=true
+DATABASE_USERNAME=root
+DATABASE_PASSWORD=your_secure_password
 
-4. **Build và chạy backend**:
-   ```bash
-   # Trên Windows
-   mvnw.cmd spring-boot:run
-   
-   # Trên Linux/macOS
-   ./mvnw spring-boot:run
-   ```
-   Máy chủ backend sẽ chạy tại địa chỉ: [http://localhost:8080](http://localhost:8080)
+# Cloudinary Configuration (sign up at cloudinary.com)
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+CLOUDINARY_FOLDER=naturegrain_products
 
-#### Cài đặt Frontend
-1. **Đi đến thư mục frontend**:
-   ```bash
-   cd ../FrontEnd
-   ```
+# Security Configuration
+JWT_SECRET=your_super_secure_jwt_secret_key_minimum_256_bits
+JWT_EXPIRATION=86400000
 
-2. **Cài đặt dependencies**:
-   ```bash
-   npm install
-   ```
+# Application Configuration
+SPRING_PROFILES_ACTIVE=dev
+SERVER_PORT=8080
+```
 
-3. **Tạo file .env.development**:
-   ```bash
-   echo "VITE_API_URL=http://localhost:8080/api
-   VITE_CLOUDINARY_CLOUD_NAME=your_cloud_name
-   VITE_IMAGE_FALLBACK_URL=/dummy.png" > .env.development
-   ```
+**Frontend (.env.development in `FrontEnd/` directory):**
+```env
+# API Configuration
+VITE_API_URL=http://localhost:8080/api
+VITE_APP_NAME=NatureGrain
+VITE_APP_VERSION=1.0.0
 
-4. **Chạy ứng dụng**:
-   ```bash
-   npm run dev
-   ```
-   Ứng dụng frontend sẽ chạy tại địa chỉ: [http://localhost:5173](http://localhost:5173)
+# Cloudinary Configuration
+VITE_CLOUDINARY_CLOUD_NAME=your_cloud_name
 
-5. **Build cho production** (tùy chọn):
-   ```bash
-   npm run build
-   ```
-   Kết quả build sẽ nằm trong thư mục `dist`
-</details>
+# Development Configuration
+VITE_DEBUG_MODE=true
+VITE_IMAGE_FALLBACK_URL=/dummy.png
+```
 
-<details>
-<summary><h3>🧪 Chạy kiểm thử</h3></summary>
+#### Database Setup
 
-#### Backend Tests
+1. **Install and start MariaDB:**
+```bash
+# Ubuntu/Debian
+sudo apt update && sudo apt install mariadb-server
+sudo systemctl start mariadb
+
+# macOS (using Homebrew)
+brew install mariadb
+brew services start mariadb
+
+# Windows (download from mariadb.org)
+```
+
+2. **Create database and user:**
+```sql
+-- Connect to MariaDB
+mysql -u root -p
+
+-- Create database
+CREATE DATABASE naturegrain 
+CHARACTER SET utf8mb4 
+COLLATE utf8mb4_unicode_ci;
+
+-- Create dedicated user (optional but recommended)
+CREATE USER 'naturegrain'@'localhost' IDENTIFIED BY 'secure_password';
+GRANT ALL PRIVILEGES ON naturegrain.* TO 'naturegrain'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+3. **Import initial data:**
+```bash
+# Import database schema and sample data
+mysql -u root -p naturegrain < naturegrain.sql
+```
+
+#### Backend Setup
+
+1. **Navigate to backend directory:**
 ```bash
 cd BackEnd
-./mvnw test
 ```
 
-#### Frontend Tests
+2. **Install dependencies and run:**
 ```bash
-cd FrontEnd
-npm run test
+# Linux/macOS
+./mvnw clean install
+./mvnw spring-boot:run
+
+# Windows
+mvnw.cmd clean install
+mvnw.cmd spring-boot:run
 ```
 
-#### E2E Tests
+3. **Verify backend is running:**
+```bash
+# Check health endpoint
+curl http://localhost:8080/api/health
+
+# Expected response: {"status":"UP"}
+```
+
+#### Frontend Setup
+
+1. **Navigate to frontend directory:**
 ```bash
 cd FrontEnd
-npm run test:e2e
+```
+
+2. **Install dependencies:**
+```bash
+# Install with npm
+npm install
+
+# Or with yarn (if preferred)
+yarn install
+```
+
+3. **Start development server:**
+```bash
+# Development mode with hot reload
+npm run dev
+
+# Or with yarn
+yarn dev
+```
+
+4. **Verify frontend is running:**
+Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+#### Production Build
+
+**Frontend production build:**
+```bash
+cd FrontEnd
+npm run build
+
+# Serve the built files (optional)
+npm run preview
+```
+
+**Backend production JAR:**
+```bash
+cd BackEnd
+./mvnw clean package -DskipTests
+java -jar target/naturegrain-0.0.1-SNAPSHOT.jar
 ```
 </details>
 
 <details>
-<summary><h3>⚙️ Cấu hình môi trường</h3></summary>
+<summary><h3>🧪 Testing & Quality Assurance</h3></summary>
 
-NatureGrain hỗ trợ các môi trường sau:
-
-- **Development**: Môi trường phát triển local
-- **Testing**: Môi trường kiểm thử
-- **Staging**: Môi trường kiểm tra trước khi triển khai
-- **Production**: Môi trường triển khai chính thức
-
-Để chuyển đổi giữa các môi trường:
-
-**Backend**: Sử dụng biến môi trường `SPRING_PROFILES_ACTIVE`
+#### Backend Testing
 ```bash
-# Windows
-set SPRING_PROFILES_ACTIVE=dev
-./mvnw spring-boot:run
+cd BackEnd
 
-# Linux/macOS
-export SPRING_PROFILES_ACTIVE=dev
-./mvnw spring-boot:run
+# Run all tests
+./mvnw test
+
+# Run tests with coverage
+./mvnw test jacoco:report
+
+# Run specific test class
+./mvnw test -Dtest=ProductServiceTest
+
+# Integration tests
+./mvnw verify
 ```
 
-**Frontend**: Sử dụng file .env tương ứng
+#### Frontend Testing
 ```bash
-# Development
+cd FrontEnd
+
+# Unit tests
+npm run test
+
+# End-to-end tests
+npm run test:e2e
+
+# Run tests in watch mode
+npm run test:watch
+
+# Generate coverage report
+npm run test:coverage
+```
+
+#### Code Quality Checks
+```bash
+# Frontend linting
+npm run lint
+npm run lint:fix
+
+# Backend code formatting
+./mvnw spotless:check
+./mvnw spotless:apply
+```
+</details>
+
+<details>
+<summary><h3>⚙️ Environment Configuration</h3></summary>
+
+NatureGrain supports multiple deployment environments with specific configurations:
+
+#### Available Environments
+
+| Environment | Purpose | Configuration File |
+|-------------|---------|-------------------|
+| **Development** | Local development | `.env.development` |
+| **Testing** | Automated testing | `.env.test` |
+| **Staging** | Pre-production testing | `.env.staging` |
+| **Production** | Live deployment | `.env.production` |
+
+#### Switching Environments
+
+**Backend environment switching:**
+```bash
+# Set Spring profile
+export SPRING_PROFILES_ACTIVE=prod
+
+# Run with specific profile
+./mvnw spring-boot:run -Dspring.profiles.active=prod
+```
+
+**Frontend environment switching:**
+```bash
+# Development (default)
 npm run dev
 
 # Production build
 npm run build
+
+# Staging
+npm run build:staging
+```
+
+#### Configuration Validation
+
+Ensure your configuration is correct by running the validation scripts:
+
+```bash
+# Validate backend configuration
+./mvnw validate
+
+# Check frontend environment variables
+npm run check:env
 ```
 </details>
 
-## 📂 Cấu trúc dự án
+## ✨ Feature Showcase
+
+<details open>
+<summary><h3>🛍️ Customer Features</h3></summary>
+
+#### Product Discovery & Shopping
+- **Smart Product Catalog**: Advanced filtering by category, price, rating, and organic certifications
+- **Intelligent Search**: Auto-complete, typo tolerance, and semantic search capabilities
+- **Product Recommendations**: AI-driven suggestions based on browsing history and preferences
+- **Wishlist Management**: Save favorite products and share with others
+- **Product Comparison**: Side-by-side comparison of product features and prices
+- **Stock Availability**: Real-time inventory tracking with low-stock notifications
+
+#### Shopping Experience
+- **Dynamic Shopping Cart**: Real-time updates, quantity adjustments, and price calculations
+- **Guest Checkout**: Streamlined purchase process without mandatory registration
+- **Multiple Payment Methods**: Credit cards, PayPal, bank transfers, and digital wallets
+- **Delivery Options**: Standard, express, and scheduled delivery with tracking
+- **Order Management**: View order history, track shipments, and manage returns
+- **Mobile Optimization**: Responsive design optimized for all device sizes
+
+#### Content & Community
+- **Nutrition Blog**: Expert articles on organic farming, healthy recipes, and lifestyle tips
+- **Product Reviews**: Verified customer reviews with photos and ratings
+- **Q&A System**: Community-driven questions and answers about products
+- **Newsletter Subscription**: Regular updates on new products and health tips
+- **Social Sharing**: Share favorite products and recipes on social media
+</details>
+
+<details open>
+<summary><h3>📊 Admin & Management Features</h3></summary>
+
+#### Dashboard & Analytics
+- **Real-time Metrics**: Sales performance, customer activity, and inventory levels
+- **Revenue Analytics**: Daily, weekly, monthly, and yearly sales reports
+- **Customer Insights**: Demographics, purchase patterns, and loyalty metrics
+- **Traffic Analysis**: Website visitors, page views, and conversion rates
+- **Performance Monitoring**: Page load times, API response times, and error rates
+
+#### Product Management
+- **Bulk Operations**: Import/export products via CSV, bulk price updates
+- **Category Management**: Hierarchical category structure with custom attributes
+- **Inventory Tracking**: Stock levels, reorder points, and automated alerts
+- **Price Management**: Dynamic pricing, bulk discounts, and promotional campaigns
+- **Image Optimization**: Automatic image compression, resizing, and format conversion
+- **SEO Tools**: Meta tags, URL optimization, and search engine visibility
+
+#### Order & Customer Management
+- **Order Processing**: Status updates, fulfillment tracking, and automated notifications
+- **Customer Support**: Ticket management, live chat integration, and response tracking
+- **User Management**: Role-based permissions, account verification, and access control
+- **Communication Tools**: Email campaigns, SMS notifications, and push messages
+- **Return Management**: RMA processing, refund handling, and inventory adjustments
+
+#### Content Management
+- **Blog Editor**: Rich text editor with media embedding and SEO optimization
+- **Banner Management**: Homepage banners, promotional displays, and A/B testing
+- **Template System**: Customizable email templates and notification layouts
+- **Multi-language Support**: Content localization and language-specific pricing
+</details>
+
+<details>
+<summary><h3>🔧 Technical Features</h3></summary>
+
+#### Performance & Scalability
+- **Lazy Loading**: Progressive content loading for faster page loads
+- **CDN Integration**: Cloudinary CDN for global image delivery
+- **Caching Strategy**: Multi-level caching for API responses and static content
+- **Database Optimization**: Query optimization and connection pooling
+- **Code Splitting**: Dynamic imports for reduced initial bundle size
+
+#### Security & Compliance
+- **JWT Authentication**: Stateless, secure token-based authentication
+- **Role-Based Access**: Granular permissions for different user types
+- **Input Validation**: Server-side validation for all user inputs
+- **SQL Injection Protection**: Parameterized queries and ORM safety
+- **XSS Prevention**: Content sanitization and output encoding
+- **HTTPS Enforcement**: SSL/TLS encryption for all communications
+
+#### Integration & Extensibility
+- **RESTful API**: Well-documented API for third-party integrations
+- **Webhook Support**: Real-time notifications for external systems
+- **Payment Gateway**: Extensible payment system for multiple providers
+- **Shipping Integration**: API connections to major shipping carriers
+- **Analytics Integration**: Google Analytics, Facebook Pixel, and custom tracking
+</details>
 
 <details open>
 <summary><h3>🖥️ Frontend Structure</h3></summary>
