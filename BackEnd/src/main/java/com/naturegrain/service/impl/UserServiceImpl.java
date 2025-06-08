@@ -37,6 +37,15 @@ public class UserServiceImpl implements UserService {
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         user.setPassword(encoder.encode(request.getPassword()));
+        
+        // Set additional user information
+        user.setFirstname(request.getFirstname());
+        user.setLastname(request.getLastname());
+        user.setPhone(request.getPhone());
+        user.setAddress(request.getAddress());
+        user.setCountry(request.getCountry());
+        user.setState(request.getState());
+        
         Set<String> strRoles = request.getRole();
         Set<Role> roles = new HashSet<>();
       
