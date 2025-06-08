@@ -2,7 +2,7 @@
   <img src="FrontEnd/public/Naturegrain.png" alt="NatureGrain Logo" width="300"/>
   <h1>NatureGrain - Cửa hàng Thực phẩm Hữu cơ</h1>
   <p><strong>Dự án: Xây dựng Hệ thống Thương mại Điện tử Thực phẩm Hữu cơ</strong></p>
-  <p><em>Phát triển bởi: Nguyễn Trần Gia Sĩ | Cập nhật: 15/05/2025</em></p>
+  <p><em>Phát triển bởi: Nguyễn Trần Gia Sĩ | Cập nhật: 08/06/2025</em></p>
 </div>
 
 <p align="center">
