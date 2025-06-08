@@ -409,9 +409,41 @@ export const fileService = {
       }
     });
   },
-  
-  // Get Cloudinary image by ID
+    // Get Cloudinary image by ID
   getCloudinaryImage: (id) => api.get(`/cloudinary/${id}`),
+  
+  // Generic image upload for blogs and other content - Using Cloudinary
+  uploadImage: (file) => {
+    if (!file) {
+      console.error('No file provided to uploadImage');
+      return Promise.reject(new Error('No file provided'));
+    }
+    
+    console.log('Uploading image file:', file.name, file.type, file.size);
+    
+    const formData = new FormData();
+    formData.append('files', file);
+    
+    // Use Cloudinary endpoint for blog images
+    return api.post('/cloudinary/blog-images/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      },
+      timeout: 90000,
+      onUploadProgress: progressEvent => {
+        console.log(`Upload progress: ${Math.round((progressEvent.loaded * 100) / progressEvent.total)}%`);
+      }
+    }).then(response => {
+      console.log('Image upload success:', response);
+      return response;
+    }).catch(error => {
+      console.error('Image upload error:', error);
+      if (error.code === 'ECONNABORTED') {
+        throw new Error('Upload timeout: Image upload took too long. Try uploading a smaller image.');
+      }
+      throw error;
+    });
+  },
   
   // Lấy URL avatar từ id người dùng
   getAvatarUrl: (userId) => {

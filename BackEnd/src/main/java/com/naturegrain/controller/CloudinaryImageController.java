@@ -143,6 +143,74 @@ public class CloudinaryImageController {
             log.error("Lỗi khi tải lên hình ảnh sản phẩm", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse<>(false, "Lỗi khi tải lên hình ảnh sản phẩm: " + e.getMessage(), null));
+        }    }
+
+    /**
+     * Upload images for blog posts
+     */
+    @PostMapping("/blog-images/upload")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
+    public ResponseEntity<?> uploadBlogImages(
+            @RequestParam("files") MultipartFile[] files,
+            @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        
+        try {
+            List<CloudinaryImage> savedImages = new ArrayList<>();
+            
+            for (MultipartFile file : files) {
+                if (file.isEmpty()) {
+                    continue;
+                }
+
+                // Upload to Cloudinary with blog-specific folder
+                String imageUrl = cloudinaryService.uploadImage(file);
+                
+                // Create CloudinaryImage object
+                CloudinaryImage image = CloudinaryImage.builder()
+                        .name(file.getOriginalFilename())
+                        .publicId(extractPublicIdFromUrl(imageUrl))
+                        .url(imageUrl)
+                        .secureUrl(imageUrl)
+                        .format(getFileExtension(file.getOriginalFilename()))
+                        .resourceType("image")
+                        .size(file.getSize())
+                        .createdAt(LocalDateTime.now())
+                        .uploadedBy(new User(userDetails.getId()))
+                        .build();
+                
+                // Save to database
+                CloudinaryImage savedImage = cloudinaryImageRepository.save(image);
+                savedImages.add(savedImage);
+            }
+            
+            // Return image information for blog use
+            if (savedImages.size() == 1) {
+                // Single image upload - return the image data directly
+                CloudinaryImage image = savedImages.get(0);
+                Map<String, Object> response = new HashMap<>();
+                response.put("id", image.getId());
+                response.put("url", image.getImageUrl());
+                response.put("name", image.getName());
+                return ResponseEntity.ok(new ApiResponse<>(true, "Blog image uploaded successfully", response));
+            } else {
+                // Multiple images - return list
+                List<Map<String, Object>> imageList = savedImages.stream()
+                        .map(image -> {
+                            Map<String, Object> imageData = new HashMap<>();
+                            imageData.put("id", image.getId());
+                            imageData.put("url", image.getImageUrl());
+                            imageData.put("name", image.getName());
+                            return imageData;
+                        })
+                        .collect(Collectors.toList());
+                
+                return ResponseEntity.ok(new ApiResponse<>(true, "Blog images uploaded successfully", imageList));
+            }
+            
+        } catch (IOException e) {
+            log.error("Error uploading blog images", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>(false, "Error uploading blog images: " + e.getMessage(), null));
         }
     }
 

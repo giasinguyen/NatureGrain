@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 @Data
@@ -26,4 +27,18 @@ public class Tag {
     @ManyToMany(mappedBy = "tags")
     @JsonBackReference
     private Set<Blog> blogs = new HashSet<>();
+    
+    // Override equals and hashCode to prevent circular references with collections
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Tag tag = (Tag) o;
+        return id == tag.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 }

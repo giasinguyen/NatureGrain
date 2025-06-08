@@ -72,6 +72,7 @@ const BlogsManagement = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState('create'); // 'create', 'edit', 'view'
   const [currentBlog, setCurrentBlog] = useState(null);
+
   // Form state
   const [formData, setFormData] = useState({
     title: '',
@@ -79,7 +80,6 @@ const BlogsManagement = () => {
     content: '',
     imageFile: null,
     imageId: null,
-    imageUrl: null,
     tags: []
   });
 
@@ -98,23 +98,13 @@ const BlogsManagement = () => {
     { id: 11, name: 'Ăn sạch' },
     { id: 12, name: 'Thực đơn' }
   ];
+
   // Fetch blogs
   const fetchBlogs = useCallback(async () => {
     try {
       setLoading(true);
       const response = await blogService.getBlogs();
-      console.log('📚 Raw blog response:', response);
-      console.log('📚 Blog data structure:', JSON.stringify(response?.data, null, 2));
-      
       if (response && response.data) {
-        // Debug each blog's image data
-        response.data.forEach((blog, index) => {
-          console.log(`📝 Blog ${index + 1} (${blog.title}):`, {
-            id: blog.id,
-            hasImage: !!blog.image,
-            imageData: blog.image
-          });
-        });
         setBlogs(response.data);
       } else {
         console.warn('API returned no data, using mock data');
@@ -126,15 +116,8 @@ const BlogsManagement = () => {
       toast.error('Không thể tải danh sách bài viết');
     } finally {
       setLoading(false);
-    }  }, []);
-
-  // Debug effect to track formData changes
-  useEffect(() => {
-    console.log('🔄 FormData changed:', formData);
-    console.log('🖼️ Current imageUrl:', formData.imageUrl);
-    console.log('📁 Current imageFile:', formData.imageFile?.name);
-    console.log('🆔 Current imageId:', formData.imageId);
-  }, [formData]);
+    }
+  }, []);
 
   useEffect(() => {
     fetchBlogs();
@@ -148,50 +131,32 @@ const BlogsManagement = () => {
       [name]: value
     }));
   };
+
   // Handle image upload
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     try {
-      console.log('📤 Uploading image:', file.name);
       const uploadResponse = await fileService.uploadImage(file);
-      console.log('📥 Upload response:', uploadResponse);
-      console.log('📥 Response data structure:', JSON.stringify(uploadResponse.data, null, 2));
+      console.log('Upload response:', uploadResponse);
       
       if (uploadResponse && uploadResponse.data && uploadResponse.data.data) {
         // Backend returns: { success: true, message: "...", data: { id, url, name } }
         const imageData = uploadResponse.data.data;
-        console.log('🖼️ Image data extracted:', imageData);
-        console.log('🔗 Image URL:', imageData.url);
-        console.log('🆔 Image ID:', imageData.id);
-          setFormData(prev => {
-          const newFormData = {
-            ...prev,
-            imageFile: file,
-            imageId: imageData.id,
-            imageUrl: imageData.url // Store URL for preview
-          };
-          console.log('📝 Updated formData:', newFormData);
-          return newFormData;
-        });
+        setFormData(prev => ({
+          ...prev,
+          imageFile: file,
+          imageId: imageData.id
+        }));
         toast.success('Ảnh đã được tải lên thành công');
-        console.log('✅ Image uploaded successfully with ID:', imageData.id);
-        
-        // Force a slight delay to ensure state update
-        setTimeout(() => {
-          console.log('⏰ Delayed check - formData after upload:', {
-            imageId: imageData.id,
-            imageUrl: imageData.url,
-            imageFile: file?.name
-          });
-        }, 100);
+        console.log('Image uploaded successfully with ID:', imageData.id);
       } else {
-        console.error('❌ Unexpected response structure:', uploadResponse);
+        console.error('Unexpected response structure:', uploadResponse);
         toast.error('Phản hồi không hợp lệ từ server');
       }
     } catch (error) {
-      console.error('❌ Error uploading image:', error);
+      console.error('Error uploading image:', error);
       toast.error('Không thể tải lên ảnh');
     }
   };
@@ -205,6 +170,7 @@ const BlogsManagement = () => {
         : [...prev.tags, tagId]
     }));
   };
+
   // Open modal for creating new blog
   const handleCreateNew = () => {
     setCurrentBlog(null);
@@ -214,12 +180,12 @@ const BlogsManagement = () => {
       content: '',
       imageFile: null,
       imageId: null,
-      imageUrl: null,
       tags: []
     });
     setModalType('create');
     setShowModal(true);
   };
+
   // Open modal for editing blog
   const handleEdit = (blog) => {
     setCurrentBlog(blog);
@@ -229,7 +195,6 @@ const BlogsManagement = () => {
       content: blog.content || '',
       imageFile: null,
       imageId: blog.image?.id || null,
-      imageUrl: blog.image?.url || null,
       tags: blog.tags?.map(tag => tag.id) || []
     });
     setModalType('edit');
@@ -412,7 +377,8 @@ const BlogsManagement = () => {
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
             placeholder="Nhập mô tả ngắn về bài viết..."
             required
-          />        </div>
+          />
+        </div>
 
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -423,82 +389,15 @@ const BlogsManagement = () => {
             accept="image/*"
             onChange={handleImageUpload}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-          />          
-          {/* Image Preview */}
-          {(() => {
-            const shouldShowPreview = formData.imageFile || formData.imageUrl || (currentBlog?.image && modalType === 'edit');
-            console.log('🔍 Preview condition check:', {
-              imageFile: !!formData.imageFile,
-              imageUrl: !!formData.imageUrl, 
-              currentBlogImage: !!currentBlog?.image,
-              modalType,
-              shouldShowPreview
-            });
-            
-            return shouldShowPreview ? (
-              <div className="mt-3">
-                <div className="relative w-full h-48 bg-gray-100 rounded-md overflow-hidden">
-                  {(() => {
-                    console.log('🎨 Rendering preview - imageUrl:', formData.imageUrl);
-                    console.log('🎨 Rendering preview - imageFile:', formData.imageFile?.name);
-                    console.log('🎨 Rendering preview - currentBlog image:', currentBlog?.image?.url);
-                    
-                    if (formData.imageUrl) {
-                      console.log('✅ Using uploaded image URL:', formData.imageUrl);
-                      return (
-                        <img
-                          src={formData.imageUrl}
-                          alt="Uploaded image"
-                          className="w-full h-full object-cover"
-                          onLoad={() => console.log('🖼️ Image loaded successfully from URL')}
-                          onError={() => console.log('❌ Image failed to load from URL')}
-                        />
-                      );
-                    } else if (formData.imageFile) {
-                      console.log('✅ Using local file preview');
-                      return (
-                        <img
-                          src={URL.createObjectURL(formData.imageFile)}
-                          alt="Preview"
-                          className="w-full h-full object-cover"
-                        />
-                      );
-                    } else if (currentBlog?.image && modalType === 'edit') {
-                      console.log('✅ Using existing blog image');
-                      return (
-                        <img
-                          src={currentBlog.image.url}
-                          alt="Current image"
-                          className="w-full h-full object-cover"
-                        />
-                      );
-                    } else {
-                      console.log('📷 No image to display');
-                      return (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <PhotoIcon className="w-12 h-12 text-gray-400" />
-                        </div>
-                      );
-                    }
-                  })()}
-                </div>
-              </div>
-            ) : null;
-          })()}
-          
+          />
           {formData.imageFile && (
             <p className="mt-1 text-sm text-green-600">
-              ✅ Ảnh đã được chọn: {formData.imageFile.name}
+              Ảnh đã được chọn: {formData.imageFile.name}
             </p>
           )}
           {formData.imageId && (
             <p className="mt-1 text-sm text-blue-600">
-              ✅ ID ảnh đã tải lên: {formData.imageId}
-            </p>
-          )}
-          {!formData.imageFile && !formData.imageId && modalType === 'create' && (
-            <p className="mt-1 text-sm text-gray-500">
-              Chọn ảnh để hiển thị preview
+              ID ảnh đã tải lên: {formData.imageId}
             </p>
           )}
         </div>

@@ -26,11 +26,11 @@ import lombok.NoArgsConstructor;
 public class Image {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
-
-    private String name;
+    private long id;    private String name;
 
     private String type;
+    
+    private String url; // URL for Cloudinary images
 
     private long size;
 
